@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tecnoria-chat-postgres
+    environment:
+      POSTGRES_DB: tecnoria_chat
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - tecnoria_chat_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tecnoria_chat"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  chat-api:
+    build:
+      context: ..
+      dockerfile: apps/chat-api/Dockerfile
+    env_file:
+      - ../apps/chat-api/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4101:4101"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4101/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  widget:
+    build:
+      context: ..
+      dockerfile: apps/widget/Dockerfile
+    environment:
+      PORT: 4102
+      HOST: 0.0.0.0
+    depends_on:
+      chat-api:
+        condition: service_healthy
+    ports:
+      - "4102:4102"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4102/frame.html >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  ingest-worker:
+    build:
+      context: ..
+      dockerfile: apps/ingest-worker/Dockerfile
+    env_file:
+      - ../apps/ingest-worker/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  tecnoria_chat_pg:
