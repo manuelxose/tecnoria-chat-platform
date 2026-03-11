@@ -95,8 +95,13 @@ upsert_a_record() {
 }
 
 if [[ -n "${CF_API_TOKEN:-}" ]]; then
-  echo "Verifying Cloudflare token"
-  cf_api GET "user/tokens/verify" >/dev/null
+  if [[ -n "${CF_ACCOUNT_ID:-}" ]]; then
+    echo "Verifying Cloudflare token via account ${CF_ACCOUNT_ID}"
+    cf_api GET "accounts/${CF_ACCOUNT_ID}/tokens/verify" >/dev/null
+  else
+    echo "Verifying Cloudflare token via zone lookup"
+    cf_api GET "zones?name=${CF_ZONE_NAME}" >/dev/null
+  fi
 else
   echo "Verifying Cloudflare global API key"
   cf_api GET "zones?name=${CF_ZONE_NAME}" >/dev/null
