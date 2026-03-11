@@ -51,6 +51,31 @@ services:
       timeout: 5s
       retries: 10
 
+  portal:
+    build:
+      context: ..
+      dockerfile: apps/portal/Dockerfile
+    env_file:
+      - ../apps/portal/.env
+    environment:
+      PORT: 4103
+      API_INTERNAL_URL: http://chat-api:4101
+      WIDGET_INTERNAL_URL: http://widget:4102
+      PORTAL_PUBLIC_URL: https://talkaris.com
+      CANONICAL_HOST: talkaris.com
+    depends_on:
+      chat-api:
+        condition: service_healthy
+      widget:
+        condition: service_healthy
+    ports:
+      - "4103:4103"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4103/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
   ingest-worker:
     build:
       context: ..

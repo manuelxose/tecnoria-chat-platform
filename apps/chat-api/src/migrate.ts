@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
@@ -10,16 +10,22 @@ const envSchema = z.object({
 
 const env = envSchema.parse(process.env);
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const migrationPath = path.resolve(currentDir, "../migrations/001_init.sql");
+const migrationsDir = path.resolve(currentDir, "../migrations");
 
 async function main(): Promise<void> {
-  const sql = await readFile(migrationPath, "utf8");
   const client = new Client({ connectionString: env.DATABASE_URL });
+  const migrationFiles = (await readdir(migrationsDir))
+    .filter((file) => file.endsWith(".sql"))
+    .sort((left, right) => left.localeCompare(right));
 
   await client.connect();
   try {
-    await client.query(sql);
-    console.log(`Applied migration ${migrationPath}`);
+    for (const migrationFile of migrationFiles) {
+      const migrationPath = path.resolve(migrationsDir, migrationFile);
+      const sql = await readFile(migrationPath, "utf8");
+      await client.query(sql);
+      console.log(`Applied migration ${migrationPath}`);
+    }
   } finally {
     await client.end();
   }

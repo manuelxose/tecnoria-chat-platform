@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tecnoria Chat Widget</title>
+    <title>Chat Widget</title>
     <style>
       :root {
         color-scheme: light;
@@ -277,7 +277,7 @@
           <div class="header__top">
             <div>
               <h1 id="bot-name">Asistente</h1>
-              <p id="bot-copy">Consultas sobre servicios y contacto.</p>
+              <p id="bot-copy">Consultas sobre la plataforma, integraciones y acceso.</p>
             </div>
             <button id="close" class="icon-button" type="button" aria-label="Cerrar">X</button>
           </div>
@@ -287,9 +287,9 @@
           <div id="starters" class="starters"></div>
           <div id="citations" class="citations hidden"></div>
           <div id="lead-card" class="lead-card hidden">
-            <strong>Quieres que lo llevemos a una propuesta o reunion?</strong>
+            <strong>Quieres llevar esto a una demo o a una conversación comercial?</strong>
             <div class="lead-card__actions">
-              <a id="primary-cta" href="/contacto" target="_top" rel="noopener">Pedir reunion</a>
+              <a id="primary-cta" href="/solicitar-acceso" target="_top" rel="noopener">Solicitar demo</a>
               <button id="show-form" type="button">Dejar datos</button>
             </div>
           </div>
@@ -304,9 +304,9 @@
           </form>
         </div>
         <div class="composer">
-          <div class="status" id="status">Listo para ayudarte.</div>
+          <div class="status" id="status">Ready to help.</div>
           <div class="composer__row">
-            <textarea id="composer" placeholder="Pregunta por servicios, automatizacion, IA, chatbots o contacto."></textarea>
+            <textarea id="composer" placeholder="Ask about the platform, integrations, governance or demo access."></textarea>
             <button id="send" type="button">Enviar</button>
           </div>
         </div>
@@ -318,15 +318,45 @@
       const apiBase = params.get("apiBase");
       const siteKey = params.get("siteKey");
       const parentOrigin = params.get("origin") || "*";
-      const fallbackContactUrl = parentOrigin === "*"
-        ? "/contacto"
-        : new URL("/contacto", parentOrigin).toString();
-      const starterQuestions = [
-        "Que hace Tecnoria exactamente",
-        "Ofreceis chatbots para empresas",
-        "Como trabajais un proyecto a medida",
-        "Quiero pedir presupuesto",
-      ];
+      const entryContext = params.get("entryContext") || "";
+      const brandLabel = params.get("brandLabel") || "la plataforma";
+      const sourceSite = params.get("sourceSite") || parentOrigin;
+      const contactUrl = params.get("contactUrl");
+      const isMarketingEn = entryContext === "marketing-en";
+      const isMarketingEs = entryContext === "marketing-es";
+      const isMarketingContext = isMarketingEn || isMarketingEs || entryContext === "auctorio-marketing";
+      const fallbackContactUrl = contactUrl
+        || "https://talkaris.com/solicitar-acceso";
+      const defaultBotCopy = isMarketingEn
+        ? "Assistant for the platform, integrations and commercial contact."
+        : isMarketingEs
+          ? "Asistente sobre la plataforma, sus integraciones y el acceso comercial."
+          : "Consultas sobre la plataforma, integraciones y acceso.";
+      const defaultWelcomeMessage = isMarketingEn
+        ? `Hello. I am the assistant for ${brandLabel}. I can help you understand the platform, its integrations and how to request a demo.`
+        : isMarketingEs
+          ? `Hola. Soy el asistente de ${brandLabel}. Puedo ayudarte a entender la plataforma, sus integraciones y cómo solicitar una demo.`
+          : "Hola. ¿En qué puedo ayudarte?";
+      const starterQuestions = isMarketingEn
+        ? [
+          "What does Talkaris do exactly",
+          "How does the widget integrate into a product",
+          "How does multi-tenant governance work",
+          "I want a demo or to speak with sales",
+        ]
+        : isMarketingEs
+          ? [
+            "Qué hace Talkaris exactamente",
+            "Cómo se integra el widget en un producto",
+            "Cómo funciona el gobierno multi-tenant",
+            "Quiero una demo o hablar con ventas",
+          ]
+          : [
+            "Qué hace Talkaris exactamente",
+            "Cómo se integra en otras aplicaciones",
+            "Cómo se administra un tenant",
+            "Quiero una demo o hablar con ventas",
+          ];
 
       let expanded = false;
       let config = null;
@@ -351,6 +381,10 @@
       const botCopy = document.getElementById("bot-copy");
 
       function notifyParent() {
+        window.parent.postMessage(
+          { type: "talkaris-chat:toggle", expanded },
+          parentOrigin === "*" ? "*" : parentOrigin
+        );
         window.parent.postMessage(
           { type: "tecnoria-chat:toggle", expanded },
           parentOrigin === "*" ? "*" : parentOrigin
@@ -406,11 +440,11 @@
         degradedMode = true;
         clearTransientBlocks();
         setComposerEnabled(false);
-        setLeadCta("Ir a contacto", fallbackContactUrl, false);
-        botName.textContent = "Tecnoria";
-        botCopy.textContent = "Contacto directo con el equipo.";
+        setLeadCta("Request demo", fallbackContactUrl, false);
+        botName.textContent = brandLabel;
+        botCopy.textContent = defaultBotCopy;
         addBubble("bot", message);
-        setStatus("Asistente no disponible.");
+        setStatus("Assistant unavailable.");
       }
 
       function ensureConfigured() {
@@ -549,11 +583,11 @@
         } catch (error) {
           addBubble(
             "bot",
-            "Ahora mismo no puedo responder desde las fuentes autorizadas. Puedes continuar por el formulario o ir a contacto."
+            "I cannot answer from the authorised sources right now. You can continue through the form or request a demo."
           );
-          setLeadCta("Ir a contacto", fallbackContactUrl, false);
+          setLeadCta("Request demo", fallbackContactUrl, false);
           renderCitations([]);
-          setStatus(error instanceof Error ? error.message : "Asistente no disponible.");
+          setStatus(error instanceof Error ? error.message : "Assistant unavailable.");
         }
       }
 
@@ -607,10 +641,19 @@
           "--surface",
           config.theme?.surfaceColor || "#081220"
         );
-        botName.textContent = config.botName || "Asistente";
-        botCopy.textContent =
-          config.welcomeMessage || "Consultas sobre servicios y contacto.";
-        addBubble("bot", config.welcomeMessage || "Hola. En que puedo ayudarte?");
+        const resolvedBotName = isMarketingContext
+          ? brandLabel
+          : (config.botName || brandLabel || "Asistente");
+        const resolvedBotCopy = isMarketingContext
+          ? defaultBotCopy
+          : (config.welcomeMessage || defaultBotCopy);
+        const resolvedWelcomeMessage = isMarketingContext
+          ? defaultWelcomeMessage
+          : (config.welcomeMessage || defaultWelcomeMessage);
+
+        botName.textContent = resolvedBotName;
+        botCopy.textContent = resolvedBotCopy;
+        addBubble("bot", resolvedWelcomeMessage);
         starters.innerHTML = "";
         starterQuestions.forEach((question) => {
           const button = document.createElement("button");
@@ -620,7 +663,7 @@
           button.addEventListener("click", () => sendMessage(question));
           starters.appendChild(button);
         });
-        primaryCta.textContent = config.cta?.primaryLabel || "Pedir reunion";
+        primaryCta.textContent = config.cta?.primaryLabel || "Request demo";
         primaryCta.href = config.cta?.primaryUrl || fallbackContactUrl;
         leadCard.classList.add("hidden");
         leadForm.classList.add("hidden");
@@ -641,7 +684,7 @@
           }
         } catch {
           enableDegradedMode(
-            "El asistente no esta disponible en este momento. Puedes dejarnos tu caso desde contacto y retomamos contigo."
+            "The assistant is not available right now. You can request a demo and the team will continue from there."
           );
         }
       });
@@ -661,7 +704,10 @@
         document.getElementById("lead-need").value = lastUserMessage;
       });
       leadForm.addEventListener("submit", submitLead);
-      primaryCta.textContent = "Pedir reunion";
+      launcher.textContent = isMarketingContext ? "AI" : "Chat";
+      botName.textContent = brandLabel;
+      botCopy.textContent = defaultBotCopy;
+      primaryCta.textContent = "Request demo";
       primaryCta.href = fallbackContactUrl;
       leadCard.classList.add("hidden");
       setComposerEnabled(true);

@@ -1,43 +1,129 @@
-# Tecnoria Chat Platform
+# Talkaris Platform
 
-Producto desacoplado para asistentes conversacionales empresariales. La web corporativa es el primer proyecto configurado del sistema, no un caso especial.
+Talkaris is a decoupled conversational AI platform with an Angular SSR portal, a Node/Express API, an embeddable widget and a multi-tenant operating model.
 
-## Entregables
+## Current map
 
-- `apps/chat-api`: API publica y administrativa para widget, leads, analitica e ingestiones.
-- `apps/ingest-worker`: worker de ingesta para sitemap, HTML publico y reindexacion.
-- `apps/ops-cli`: CLI operativa para crear proyectos, fuentes, jobs y evaluaciones.
-- `apps/widget`: assets del widget embebible por `iframe` y snippet loader.
-- `packages/core`: tipos, chunking, scoring y utilidades compartidas.
+- `apps/chat-api`: public API, auth, tenant console endpoints and superadmin endpoints.
+- `apps/portal`: Angular SSR portal for public marketing pages, access flows, tenant console and superadmin.
+- `apps/widget`: embeddable iframe widget and async loader.
+- `apps/ingest-worker`: ingestion worker for sitemap, HTML, PDF and markdown sources.
+- `apps/ops-cli`: operational CLI for tenants, projects, sources, ingestions and analytics.
+- `packages/core`: shared types and utilities.
+- `infra`: Docker Compose, Cloudflare cutover script and Nginx template for `talkaris.com`.
 
-## MVP implementado
+## Product status
 
-- Modelo multi-proyecto con `project_id` en conocimiento, conversaciones, leads y analitica.
-- Pipeline estandar para web publica con sitemap, extraccion HTML, limpieza, chunking y versionado.
-- Motor conversacional RAG-ready con retrieval lexico y estructura preparada para embeddings/pgvector.
-- Widget desacoplado con launcher, historial, citas, CTA y captura ligera de leads.
-- Integracion por webhook para entregar leads al flujo de contacto actual de Tecnoria.
-- Documentacion operativa y `docker-compose` de referencia.
+Status baseline: **March 10, 2026**.
 
-## Puesta en marcha
+The repository already includes:
 
-1. Crear `.env` en `apps/chat-api`, `apps/ingest-worker` y `apps/ops-cli` a partir de los ejemplos.
-2. Levantar PostgreSQL/pgvector, `chat-api`, `widget` e `ingest-worker`.
-3. Ejecutar `npm run migrate -w @tecnoria-chat/chat-api`.
-4. Ejecutar `npm run cli -- seed-tecnoria`.
-5. Validar con `npm run cli -- run-eval --project tecnoria`.
-6. Integrar la web corporativa apuntando al widget en `http://localhost:4102/` en local o `https://tecnoriasl.com/chat-widget/` en produccion.
+- multi-tenant data model with `tenants`, `projects`, `users`, `tenant_memberships`, `platform_settings` and `access_requests`,
+- cookie-based auth for the portal,
+- Talkaris public branding defaults and demo project bootstrap,
+- bilingual public routes for SEO (`es` at root, `en` under `/en`),
+- SSR SEO layer with canonical, `hreflang`, JSON-LD, `robots.txt` and `sitemap.xml`,
+- widget compatibility for `window.TalkarisWidgetConfig` plus legacy aliases,
+- deployment templates for `talkaris.com` behind Cloudflare.
 
-## Despliegue publico recomendado
+## Local setup
 
-- `widget`: `https://tecnoriasl.com/chat-widget/`
-- `api`: `https://tecnoriasl.com/chat-api/`
-- `health`: `https://tecnoriasl.com/chat-api/health`
+1. Create local env files from:
+   - `apps/chat-api/.env.example`
+   - `apps/portal/.env.example`
+   - `apps/ingest-worker/.env.example`
+   - `apps/ops-cli/.env.example`
+2. Install dependencies:
 
-El despliegue recomendado reutiliza el mismo dominio principal y deja a `nginx` reescribir `/chat-widget/*` y `/chat-api/*` hacia los servicios internos. Con esto se evita depender de `chat.tecnoriasl.com` y `chat-api.tecnoriasl.com`.
+```bash
+npm install
+```
 
-## Limitaciones actuales
+3. Start PostgreSQL:
 
-- El retrieval hibrido usa busqueda lexica y deja el ranking vectorial preparado a traves de la columna `embedding`.
-- El cliente LLM por defecto es determinista y basado en plantillas; el adaptador OpenAI-compatible esta preparado por configuracion.
-- La operacion del MVP se realiza por CLI y endpoints internos; el backoffice visual queda para la siguiente fase.
+```bash
+cd infra
+docker compose up -d postgres
+```
+
+4. Run migrations:
+
+```bash
+npm run migrate -w @tecnoria-chat/chat-api
+```
+
+5. Bootstrap Talkaris defaults:
+
+```bash
+npm run cli -- create-tenant --slug platform-default --name "Talkaris Platform"
+npm run cli -- seed-talkaris --tenant platform-default
+SUPERADMIN_EMAIL=admin@talkaris.com \
+SUPERADMIN_PASSWORD=change-me-please \
+PORTAL_PUBLIC_URL=https://talkaris.com \
+API_PUBLIC_URL=https://talkaris.com/api \
+WIDGET_PUBLIC_URL=https://talkaris.com/widget/ \
+npm run seed:talkaris -w @tecnoria-chat/chat-api
+```
+
+6. Start services:
+
+```bash
+npm run dev:api
+npm run dev:widget
+npm run dev:portal
+npm run dev:ingest
+```
+
+## Local URLs
+
+- Portal: `http://localhost:4103`
+- Portal health: `http://localhost:4103/health`
+- `robots.txt`: `http://localhost:4103/robots.txt`
+- `sitemap.xml`: `http://localhost:4103/sitemap.xml`
+- API: `http://localhost:4101/health`
+- Widget loader: `http://localhost:4102/embed.js`
+
+## Main commands
+
+```bash
+npm run build
+npm run test
+npm run dev:api
+npm run dev:portal
+npm run dev:widget
+npm run dev:ingest
+npm run cli -- seed-talkaris --tenant platform-default
+npm run cli -- create-project --tenant demo --key demo --name "Demo Project"
+npm run cli -- upsert-source --project demo --kind sitemap --entry https://talkaris.com/sitemap.xml
+npm run cli -- analytics-summary --project demo
+```
+
+## Production target
+
+- Public site: `https://talkaris.com/`
+- API: `https://talkaris.com/api/*`
+- Widget: `https://talkaris.com/widget/*`
+- Canonical host: `https://talkaris.com`
+- Alias: `https://www.talkaris.com` -> `301` to apex
+
+## SEO public routes
+
+- Spanish: `/`, `/funcionalidades`, `/integraciones`, `/casos-de-uso`, `/faq`
+- English: `/en`, `/en/features`, `/en/integrations`, `/en/use-cases`, `/en/faq`
+- Noindex conversion/private routes: `/solicitar-acceso`, `/en/request-access`, `/login`, `/reset-password`, `/app`, `/admin`
+
+## Documentation
+
+- `docs/OPERATIONS.md`
+- `docs/PROJECT_STATUS.md`
+- `docs/ROADMAP.md`
+- `docs/ARCHITECTURE.md`
+- `docs/API_CONTRACTS.md`
+- `docs/DEPLOYMENT_PORTAL.md`
+- `docs/TALKARIS_LAUNCH.md`
+
+## Known constraints
+
+- Internal workspace and database identifiers still use `tecnoria-chat` naming to avoid risky churn.
+- SMTP must be provisioned outside the repo for `hello@talkaris.com`.
+- Public marketing content is versioned in the portal source; there is no CMS in this phase.

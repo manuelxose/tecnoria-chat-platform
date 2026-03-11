@@ -2,7 +2,7 @@
   "name": "tecnoria-chat-platform",
   "private": true,
   "version": "0.1.0",
-  "description": "Decoupled enterprise chatbot platform for Tecnoria and future clients.",
+  "description": "Talkaris conversational AI platform for websites, products and multi-tenant operations.",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -11,7 +11,9 @@
     "build": "npm run build --workspaces --if-present",
     "dev:api": "npm run -w @tecnoria-chat/chat-api dev",
     "dev:ingest": "npm run -w @tecnoria-chat/ingest-worker dev",
+    "dev:portal": "npm run -w @tecnoria-chat/portal start",
     "dev:widget": "npm run -w @tecnoria-chat/widget serve",
+    "seed:talkaris": "npm run -w @tecnoria-chat/chat-api seed:talkaris",
     "cli": "npm run -w @tecnoria-chat/ops-cli cli",
     "test": "npm run test --workspaces --if-present"
   }

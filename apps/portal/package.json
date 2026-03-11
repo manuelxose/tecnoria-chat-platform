@@ -1,0 +1,48 @@
+{
+  "name": "@tecnoria-chat/portal",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Angular SSR portal for the Talkaris platform.",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "npm run clean && ng build --configuration production",
+    "watch": "ng build --watch --configuration development",
+    "serve:ssr": "node dist/portal/server/server.mjs",
+    "test": "tsx --test src/**/*.test.ts",
+    "clean": "rimraf dist .angular node_modules/.cache"
+  },
+  "dependencies": {
+    "@angular/common": "^20.3.10",
+    "@angular/compiler": "^20.3.10",
+    "@angular/core": "^20.3.10",
+    "@angular/forms": "^20.3.10",
+    "@angular/platform-browser": "^20.3.10",
+    "@angular/platform-server": "^20.3.10",
+    "@angular/router": "^20.3.10",
+    "@angular/ssr": "^20.3.9",
+    "express": "^5.1.0",
+    "rxjs": "^7.8.1",
+    "tslib": "^2.6.2",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^20.3.19",
+    "@angular/cli": "^20.3.9",
+    "@angular/compiler-cli": "^20.3.10",
+    "@types/express": "^5.0.1",
+    "@types/jasmine": "~5.1.0",
+    "@types/node": "^20.19.10",
+    "eslint": "^8.57.0",
+    "jasmine-core": "~5.9.0",
+    "karma": "~6.4.1",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "rimraf": "^5.0.5",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.2"
+  }
+}

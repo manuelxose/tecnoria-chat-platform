@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Talkaris</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#00c2a8" />
+      <stop offset="100%" stop-color="#0f6fff" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#081220" />
+  <path d="M16 18h32v9H37v21h-10V27H16z" fill="url(#bg)" />
+</svg>

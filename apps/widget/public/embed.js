@@ -1,8 +1,12 @@
 (function () {
   const script = document.currentScript;
-  const globalConfig = window.TecnoriaChatWidgetConfig || {};
+  const globalConfig = window.TalkarisWidgetConfig || window.ChatPortalWidgetConfig || window.TecnoriaChatWidgetConfig || {};
   const siteKey = globalConfig.siteKey || script?.dataset.siteKey;
   const apiBase = globalConfig.apiBase || script?.dataset.apiBase;
+  const entryContext = globalConfig.entryContext || script?.dataset.entryContext;
+  const brandLabel = globalConfig.brandLabel || script?.dataset.brandLabel;
+  const sourceSite = globalConfig.sourceSite || script?.dataset.sourceSite;
+  const contactUrl = globalConfig.contactUrl || script?.dataset.contactUrl;
   const configuredBaseUrl =
     globalConfig.widgetBaseUrl
     || globalConfig.widgetOrigin
@@ -15,7 +19,7 @@
   const frameOrigin = new URL(widgetBaseUrl).origin;
 
   if (!siteKey || !apiBase) {
-    console.error("Tecnoria chat widget requires siteKey and apiBase.");
+    console.error("Chat widget requires siteKey and apiBase.");
     return;
   }
 
@@ -24,10 +28,22 @@
   frameUrl.searchParams.set("siteKey", siteKey);
   frameUrl.searchParams.set("apiBase", apiBase);
   frameUrl.searchParams.set("origin", window.location.origin);
+  if (entryContext) {
+    frameUrl.searchParams.set("entryContext", entryContext);
+  }
+  if (brandLabel) {
+    frameUrl.searchParams.set("brandLabel", brandLabel);
+  }
+  if (sourceSite) {
+    frameUrl.searchParams.set("sourceSite", sourceSite);
+  }
+  if (contactUrl) {
+    frameUrl.searchParams.set("contactUrl", contactUrl);
+  }
 
   iframe.src = frameUrl.toString();
-  iframe.title = "Tecnoria Chat Widget";
-  iframe.setAttribute("aria-label", "Tecnoria Chat Widget");
+  iframe.title = "Chat Widget";
+  iframe.setAttribute("aria-label", "Chat Widget");
   iframe.style.position = "fixed";
   iframe.style.bottom = "20px";
   iframe.style.right = "20px";
@@ -47,7 +63,11 @@
   };
 
   window.addEventListener("message", (event) => {
-    if (event.origin !== frameOrigin || !event.data || event.data.type !== "tecnoria-chat:toggle") {
+    if (
+      event.origin !== frameOrigin
+      || !event.data
+      || (event.data.type !== "talkaris-chat:toggle" && event.data.type !== "tecnoria-chat:toggle")
+    ) {
       return;
     }
     updateSize(Boolean(event.data.expanded));

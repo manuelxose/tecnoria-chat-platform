@@ -7,7 +7,7 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   FETCH_TIMEOUT_MS: z.coerce.number().default(15000),
-  CRAWLER_USER_AGENT: z.string().default("TecnoriaChatIngest/0.1 (+https://tecnoriasl.com)"),
+  CRAWLER_USER_AGENT: z.string().default("TalkarisIngest/0.1 (+https://talkaris.com)"),
 });
 
 const env = envSchema.parse(process.env);
@@ -458,4 +458,3 @@ if (process.argv.includes("--watch")) {
       await pool.end();
     });
 }
-

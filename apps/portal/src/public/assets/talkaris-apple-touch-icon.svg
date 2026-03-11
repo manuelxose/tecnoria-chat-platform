@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title">
+  <title>Talkaris Apple Touch Icon</title>
+  <defs>
+    <linearGradient id="accent" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#00c2a8" />
+      <stop offset="100%" stop-color="#4bc6ff" />
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="42" fill="#081220" />
+  <circle cx="90" cy="90" r="62" fill="rgba(255,255,255,0.04)" />
+  <path d="M48 50h84v24h-30v56H78V74H48z" fill="url(#accent)" />
+</svg>

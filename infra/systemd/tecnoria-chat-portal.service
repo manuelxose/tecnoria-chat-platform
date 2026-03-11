@@ -1,0 +1,17 @@
+[Unit]
+Description=Tecnoria Chat Portal
+After=network.target tecnoria-chat-api.service tecnoria-chat-widget.service
+Wants=tecnoria-chat-api.service tecnoria-chat-widget.service
+
+[Service]
+Type=simple
+User=tecnoria
+Group=tecnoria
+WorkingDirectory=/var/www/tecnoria-chat-platform/apps/portal
+EnvironmentFile=/etc/tecnoria/portal.env
+ExecStart=/usr/bin/node /var/www/tecnoria-chat-platform/apps/portal/dist/portal/server/server.mjs
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

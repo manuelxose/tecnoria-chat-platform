@@ -1,0 +1,83 @@
+server {
+  listen 80;
+  server_name www.talkaris.com;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/letsencrypt;
+  }
+
+  return 301 https://talkaris.com$request_uri;
+}
+
+server {
+  listen 80;
+  server_name talkaris.com;
+
+  location ^~ /.well-known/acme-challenge/ {
+    root /var/www/letsencrypt;
+  }
+
+  return 301 https://talkaris.com$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name www.talkaris.com;
+
+  ssl_certificate /etc/letsencrypt/live/talkaris.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/talkaris.com/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 1d;
+
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+  add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+  return 301 https://talkaris.com$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name talkaris.com;
+
+  ssl_certificate /etc/letsencrypt/live/talkaris.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/talkaris.com/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 1d;
+
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+  add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+  location / {
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_pass http://127.0.0.1:4103;
+  }
+
+  location /api/ {
+    rewrite ^/api/(.*)$ /$1 break;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_pass http://127.0.0.1:4101;
+  }
+
+  location /widget/ {
+    rewrite ^/widget/(.*)$ /$1 break;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_pass http://127.0.0.1:4102;
+  }
+}
