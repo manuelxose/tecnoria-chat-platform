@@ -11,6 +11,13 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+CF_SHARED_ENV_FILE="${CF_SHARED_ENV_FILE:-${HOME}/.config/cloudflare/api.env}"
+
+if [[ -f "${CF_SHARED_ENV_FILE}" ]]; then
+  # shellcheck disable=SC1090
+  source "${CF_SHARED_ENV_FILE}"
+fi
+
 require_env() {
   local name="$1"
   if [[ -z "${!name:-}" ]]; then
