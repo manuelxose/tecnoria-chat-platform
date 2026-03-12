@@ -110,7 +110,7 @@ npm run cli -- analytics-summary --project demo
 
 - Spanish: `/`, `/funcionalidades`, `/integraciones`, `/casos-de-uso`, `/faq`
 - English: `/en`, `/en/features`, `/en/integrations`, `/en/use-cases`, `/en/faq`
-- Noindex conversion/private routes: `/solicitar-acceso`, `/en/request-access`, `/login`, `/reset-password`, `/app`, `/admin`
+- Noindex conversion/private routes: `/solicitar-demo`, `/en/request-demo`, `/login`, `/reset-password`, `/app`, `/admin`
 
 ## Documentation
 

@@ -22,7 +22,7 @@ import { buildNoIndexSeo } from "../services/seo-utils";
           </p>
           <div class="inline-links">
             <a class="plain-link" routerLink="/reset-password">Recuperar acceso</a>
-            <a class="plain-link" routerLink="/solicitar-acceso">Solicitar acceso</a>
+            <a class="plain-link" routerLink="/solicitar-demo">Solicitar demo</a>
           </div>
         </article>
 

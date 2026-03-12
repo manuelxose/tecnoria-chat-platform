@@ -43,10 +43,7 @@ export function buildPageSeo(
 ): SeoPayload {
   const safeSettings = { ...DEFAULT_PORTAL_SETTINGS, ...settings };
   const canonicalUrl = joinUrl(baseUrl, page.path);
-  const titleBase = safeSettings.seoTitle || safeSettings.brandName;
-  const pageTitle = page.key === "home"
-    ? titleBase
-    : `${page.title} | ${safeSettings.brandName}`;
+  const pageTitle = page.seoTitle || `${page.title} | ${safeSettings.brandName}`;
   const links: SeoLink[] = [
     { rel: "canonical", href: canonicalUrl },
     {
@@ -68,11 +65,11 @@ export function buildPageSeo(
 
   return {
     pageTitle,
-    description: page.description,
+    description: page.seoDescription || page.description,
     robots: page.indexable ? "index, follow" : "noindex, follow",
     canonicalUrl,
     locale: page.locale === "es" ? "es_ES" : "en_US",
-    keywords: [...safeSettings.seoKeywords, page.title, page.navLabel].join(", "),
+    keywords: [...page.seoKeywords, ...safeSettings.seoKeywords].join(", "),
     links,
     schemas: buildPageSchemas(page, safeSettings, canonicalUrl),
     ogImageUrl: safeSettings.seoImageUrl,
@@ -98,7 +95,7 @@ export function buildNoIndexSeo(
     locale: locale === "es" ? "es_ES" : "en_US",
     keywords: safeSettings.seoKeywords.join(", "),
     links: [{ rel: "canonical", href: canonicalUrl }],
-    schemas: [buildWebPageSchema(title, description, canonicalUrl, locale)],
+    schemas: [buildWebPageSchema("WebPage", title, description, canonicalUrl, locale)],
     ogImageUrl: safeSettings.seoImageUrl,
     siteName: safeSettings.organizationName || safeSettings.brandName,
   };
@@ -128,10 +125,24 @@ export function buildBlogArticleSeo(
     robots: "index, follow",
     canonicalUrl,
     locale: article.locale === "es" ? "es_ES" : "en_US",
-    keywords: [safeSettings.brandName, article.title, "blog", ...(safeSettings.seoKeywords || [])].join(", "),
+    keywords: [article.title, "blog", safeSettings.brandName, ...safeSettings.seoKeywords].join(", "),
     links: [{ rel: "canonical", href: canonicalUrl }],
     schemas: [
       buildOrganizationSchema(safeSettings),
+      buildWebSiteSchema(safeSettings),
+      buildBreadcrumbSchema(
+        article.locale === "es"
+          ? [
+              { name: "Inicio", url: joinUrl(baseUrl, "/") },
+              { name: "Blog", url: joinUrl(baseUrl, "/blog") },
+              { name: article.title, url: canonicalUrl },
+            ]
+          : [
+              { name: "Home", url: joinUrl(baseUrl, "/en") },
+              { name: "Blog", url: joinUrl(baseUrl, "/en/blog") },
+              { name: article.title, url: canonicalUrl },
+            ]
+      ),
       {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
@@ -163,13 +174,29 @@ function buildPageSchemas(
   settings: PortalSettings,
   canonicalUrl: string
 ): Record<string, unknown>[] {
+  const pageType = page.key === "blog" ? "CollectionPage" : "WebPage";
   const schemas: Record<string, unknown>[] = [
     buildOrganizationSchema(settings),
     buildWebSiteSchema(settings),
-    buildWebPageSchema(page.title, page.description, canonicalUrl, page.locale),
+    buildWebPageSchema(pageType, page.title, page.seoDescription || page.description, canonicalUrl, page.locale),
   ];
 
-  if (page.key === "home") {
+  if (page.key !== "home") {
+    schemas.push(
+      buildBreadcrumbSchema([
+        {
+          name: page.locale === "es" ? "Inicio" : "Home",
+          url: joinUrl(settings.portalBaseUrl, page.locale === "es" ? "/" : "/en"),
+        },
+        {
+          name: page.breadcrumbLabel,
+          url: canonicalUrl,
+        },
+      ])
+    );
+  }
+
+  if (page.key === "home" || page.key === "features") {
     schemas.push({
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
@@ -177,11 +204,10 @@ function buildPageSchemas(
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       url: canonicalUrl,
-      description: page.description,
+      description: page.seoDescription || page.description,
       offers: {
         "@type": "Offer",
-        price: "0",
-        priceCurrency: "EUR",
+        availability: "https://schema.org/InStock",
       },
     });
   }
@@ -225,6 +251,7 @@ function buildWebSiteSchema(settings: PortalSettings): Record<string, unknown> {
 }
 
 function buildWebPageSchema(
+  type: string,
   title: string,
   description: string,
   canonicalUrl: string,
@@ -232,11 +259,24 @@ function buildWebPageSchema(
 ): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
-    "@type": "WebPage",
+    "@type": type,
     name: title,
     description,
     url: canonicalUrl,
     inLanguage: locale,
+  };
+}
+
+function buildBreadcrumbSchema(items: Array<{ name: string; url: string }>): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
   };
 }
 
@@ -262,28 +302,31 @@ export function buildSitemapXml(
   const normalizedBaseUrl = ensureBaseUrl(baseUrl);
   const lastmod = new Date().toISOString().slice(0, 10);
   const indexablePages = pages.filter((page) => page.indexable);
-  const pageEntries = indexablePages.map((page) => {
-    const canonical = joinUrl(normalizedBaseUrl, page.path);
-    const alternateEs = joinUrl(normalizedBaseUrl, getAlternatePublicPage(page, "es").path);
-    const alternateEn = joinUrl(normalizedBaseUrl, getAlternatePublicPage(page, "en").path);
-    return `  <url>
+  const pageEntries = indexablePages
+    .map((page) => {
+      const canonical = joinUrl(normalizedBaseUrl, page.path);
+      const alternateEs = joinUrl(normalizedBaseUrl, getAlternatePublicPage(page, "es").path);
+      const alternateEn = joinUrl(normalizedBaseUrl, getAlternatePublicPage(page, "en").path);
+      return `  <url>
     <loc>${canonical}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>${page.key === "home" ? "1.0" : "0.8"}</priority>
+    <changefreq>${page.key === "blog" ? "weekly" : "monthly"}</changefreq>
+    <priority>${page.key === "home" ? "1.0" : page.key === "blog" ? "0.9" : "0.8"}</priority>
     <xhtml:link rel="alternate" hreflang="es" href="${alternateEs}" />
     <xhtml:link rel="alternate" hreflang="en" href="${alternateEn}" />
     <xhtml:link rel="alternate" hreflang="x-default" href="${alternateEs}" />
   </url>`;
-  }).join("\n");
+    })
+    .join("\n");
 
-  const dynamic = dynamicEntries.map((entry) => {
-    const canonical = joinUrl(normalizedBaseUrl, entry.path);
-    const alternatePath = entry.locale === "es"
-      ? entry.path.replace(/^\/blog\//, "/en/blog/")
-      : entry.path.replace(/^\/en\/blog\//, "/blog/");
+  const dynamic = dynamicEntries
+    .map((entry) => {
+      const canonical = joinUrl(normalizedBaseUrl, entry.path);
+      const alternatePath = entry.locale === "es"
+        ? entry.path.replace(/^\/blog\//, "/en/blog/")
+        : entry.path.replace(/^\/en\/blog\//, "/blog/");
 
-    return `  <url>
+      return `  <url>
     <loc>${canonical}</loc>
     <lastmod>${(entry.updatedAt || lastmod).slice(0, 10)}</lastmod>
     <changefreq>weekly</changefreq>
@@ -292,7 +335,8 @@ export function buildSitemapXml(
     <xhtml:link rel="alternate" hreflang="${entry.locale === "es" ? "en" : "es"}" href="${joinUrl(normalizedBaseUrl, alternatePath)}" />
     <xhtml:link rel="alternate" hreflang="x-default" href="${canonical}" />
   </url>`;
-  }).join("\n");
+    })
+    .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset

@@ -138,7 +138,7 @@ const defaultPromptPolicy: PromptPolicy = {
 
 const defaultCtaConfig: CTAConfig = {
   primaryLabel: "Solicitar demo",
-  primaryUrl: "https://talkaris.com/solicitar-acceso",
+  primaryUrl: "https://talkaris.com/solicitar-demo",
   secondaryLabel: "Ver funcionalidades",
   secondaryUrl: "https://talkaris.com/funcionalidades",
   salesKeywords: ["precio", "presupuesto", "contacto", "demo", "reunion", "contratar"],

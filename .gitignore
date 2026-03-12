@@ -1,8 +1,14 @@
 node_modules/
 dist/
 .angular/
-.env
-.env.local
 .cache/
 coverage/
 *.log
+.vscode/
+
+.env
+.env.*
+!.env.example
+*.env
+
+apps/portal/releases/

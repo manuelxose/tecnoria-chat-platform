@@ -9,7 +9,7 @@ User=tecnoria
 Group=tecnoria
 WorkingDirectory=/var/www/tecnoria-chat-platform/apps/portal
 EnvironmentFile=/etc/tecnoria/portal.env
-ExecStart=/usr/bin/node /var/www/tecnoria-chat-platform/apps/portal/dist/portal/server/server.mjs
+ExecStart=/var/www/bin/run-release-entry.sh /var/www/tecnoria-chat-platform/apps/portal/releases/current/server/server.mjs
 Restart=always
 RestartSec=2
 

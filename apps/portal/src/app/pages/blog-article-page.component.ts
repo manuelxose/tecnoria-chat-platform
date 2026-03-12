@@ -1,86 +1,118 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, RouterModule } from "@angular/router";
-import { DEFAULT_PORTAL_SETTINGS, PublicLocale } from "../content/public-site";
+import { DEFAULT_PORTAL_SETTINGS, getPublicNavigation, PublicLocale } from "../content/public-site";
 import { BlogPostDetail, PlatformPublicResponse, PortalSettings } from "../core/models";
 import { PortalApiService } from "../core/portal-api.service";
-import { SeoService } from "../services/seo.service";
 import { buildBlogArticleSeo } from "../services/seo-utils";
+import { SeoService } from "../services/seo.service";
+import { MarketingFrameComponent } from "../shared/marketing-frame.component";
 
 @Component({
   selector: "app-blog-article-page",
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MarketingFrameComponent],
   template: `
-    <section class="hero-shell">
-      <div class="site-shell">
-        <header class="public-nav surface-card">
-          <a class="brand-lockup" [routerLink]="locale === 'es' ? '/' : '/en'">
-            <span class="brand-lockup__mark">T</span>
-            <span>
-              <strong>{{ platform.brandName }}</strong>
-              <small>Developed by {{ platform.developedBy }}</small>
-            </span>
-          </a>
-
-          <nav class="public-nav__links">
-            <a class="plain-link" [routerLink]="locale === 'es' ? '/blog' : '/en/blog'">Blog</a>
-            <a class="plain-link" routerLink="/login">{{ locale === 'es' ? 'Portal' : 'Portal' }}</a>
-          </nav>
-        </header>
-
-        <article class="hero-card" *ngIf="post; else notFound">
-          <div class="eyebrow-row">
-            <span class="eyebrow">{{ post.category || 'Editorial' }}</span>
-            <a class="plain-link" [routerLink]="locale === 'es' ? '/blog' : '/en/blog'">
-              {{ locale === 'es' ? 'Volver al blog' : 'Back to blog' }}
-            </a>
+    <app-marketing-frame
+      [locale]="locale"
+      [platform]="platform"
+      [navigation]="navigation"
+      [alternatePath]="locale === 'es' ? '/en/blog' : '/blog'"
+      [ctaLabel]="locale === 'es' ? 'Solicitar demo' : 'Request demo'"
+      [ctaPath]="locale === 'es' ? '/solicitar-demo' : '/en/request-demo'"
+    >
+      <section class="page-hero page-hero--compact" id="main-content" *ngIf="post; else notFound">
+        <div class="site-shell article-shell">
+          <div class="breadcrumb-row">
+            <a [routerLink]="locale === 'es' ? '/' : '/en'">{{ locale === "es" ? "Inicio" : "Home" }}</a>
+            <span>/</span>
+            <a [routerLink]="locale === 'es' ? '/blog' : '/en/blog'">Blog</a>
+            <span>/</span>
+            <span>{{ post?.title }}</span>
           </div>
 
-          <h1>{{ post.title }}</h1>
-          <p class="hero-copy">{{ post.summary }}</p>
+          <article class="article-hero-card">
+            <span class="eyebrow">{{ post.category || (locale === "es" ? "Editorial" : "Editorial") }}</span>
+            <h1>{{ post.title }}</h1>
+            <p class="hero-copy">{{ post.summary }}</p>
 
-          <div class="hero-meta">
-            <span>{{ post.author }}</span>
-            <span>{{ post.publishedAt | date: 'mediumDate' }}</span>
-            <span>{{ post.locale.toUpperCase() }}</span>
+            <div class="hero-meta">
+              <span>{{ post.author }}</span>
+              <span>{{ post.publishedAt | date: "mediumDate" }}</span>
+              <span>{{ post.locale.toUpperCase() }}</span>
+            </div>
+
+            <img
+              class="article-hero-card__image"
+              [src]="post.imageUrl || '/assets/talkaris-editorial-campaign.png'"
+              [alt]="post.imageUrl ? post.title : ''"
+              loading="eager"
+            />
+          </article>
+
+          <div class="article-layout">
+            <aside class="article-sidebar">
+              <div class="article-sidebar__card">
+                <span class="eyebrow">{{ locale === "es" ? "Qué cubre" : "What it covers" }}</span>
+                <h2>{{ locale === "es" ? "Lectura con salida comercial clara." : "Editorial content with a clear commercial exit." }}</h2>
+                <p>
+                  {{
+                    locale === "es"
+                      ? "Cada artículo debe reforzar autoridad, enlazar con la capa comercial correcta y ayudar a decidir el siguiente paso."
+                      : "Every article should reinforce authority, link back to the right commercial surface and clarify the next step."
+                  }}
+                </p>
+              </div>
+              <div class="article-sidebar__card">
+                <span class="eyebrow">{{ locale === "es" ? "Siguiente paso" : "Next step" }}</span>
+                <h2>{{ locale === "es" ? "Lleva el tema a tu caso." : "Apply the topic to your case." }}</h2>
+                <a class="button button-primary button-primary--block" [routerLink]="locale === 'es' ? '/solicitar-demo' : '/en/request-demo'">
+                  {{ locale === "es" ? "Solicitar demo" : "Request demo" }}
+                </a>
+              </div>
+            </aside>
+
+            <article class="article-body-card">
+              <div class="article-body" [innerHTML]="post.bodyHtml"></div>
+            </article>
           </div>
+        </div>
+      </section>
 
-          <img
-            *ngIf="post.imageUrl"
-            [src]="post.imageUrl"
-            [alt]="post.title"
-            style="width: 100%; border-radius: 24px; margin-top: 1.5rem;"
-          />
-
-          <section class="surface-card" style="margin-top: 1.5rem;">
-            <div [innerHTML]="post.bodyHtml"></div>
-          </section>
-        </article>
-
-        <ng-template #notFound>
-          <section class="surface-card public-cta-band">
-            <div>
-              <span class="eyebrow">{{ locale === 'es' ? 'No encontrado' : 'Not found' }}</span>
-              <h2>{{ locale === 'es' ? 'El articulo no esta disponible.' : 'This article is not available.' }}</h2>
-              <p>{{ locale === 'es'
-                ? 'Puede que siga en borrador o que la URL ya no exista.'
-                : 'It may still be in draft or the URL may no longer exist.' }}</p>
+      <ng-template #notFound>
+        <section class="page-hero page-hero--compact" id="main-content">
+          <div class="site-shell">
+            <div class="empty-state-card">
+              <div>
+                <span class="eyebrow">{{ locale === "es" ? "No encontrado" : "Not found" }}</span>
+                <h1>{{ locale === "es" ? "Este artículo no está disponible." : "This article is not available." }}</h1>
+                <p>
+                  {{
+                    locale === "es"
+                      ? "Puede que siga en borrador, que se haya despublicado o que la URL ya no exista."
+                      : "It may still be a draft, it may have been unpublished, or the URL may no longer exist."
+                  }}
+                </p>
+              </div>
+              <div class="hero-actions">
+                <a class="button button-primary" [routerLink]="locale === 'es' ? '/blog' : '/en/blog'">
+                  {{ locale === "es" ? "Volver al blog" : "Back to blog" }}
+                </a>
+                <a class="button button-secondary" [routerLink]="locale === 'es' ? '/' : '/en'">
+                  {{ locale === "es" ? "Volver al inicio" : "Back to home" }}
+                </a>
+              </div>
             </div>
-            <div class="hero-actions">
-              <a class="button button-primary" [routerLink]="locale === 'es' ? '/blog' : '/en/blog'">
-                {{ locale === 'es' ? 'Ver blog' : 'View blog' }}
-              </a>
-            </div>
-          </section>
-        </ng-template>
-      </div>
-    </section>
+          </div>
+        </section>
+      </ng-template>
+    </app-marketing-frame>
   `,
 })
 export class BlogArticlePageComponent implements OnInit {
   locale: PublicLocale = "es";
   platform: PortalSettings = DEFAULT_PORTAL_SETTINGS;
+  navigation = getPublicNavigation("es");
   post: BlogPostDetail | null = null;
 
   constructor(
@@ -91,6 +123,7 @@ export class BlogArticlePageComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.locale = this.route.snapshot.data["locale"] as PublicLocale;
+    this.navigation = getPublicNavigation(this.locale);
     const slug = String(this.route.snapshot.paramMap.get("slug") || "").trim();
 
     try {

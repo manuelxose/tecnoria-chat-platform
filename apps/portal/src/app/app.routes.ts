@@ -88,16 +88,26 @@ export const routes: Routes = [
     data: { pageKey: "faq", locale: "en" },
   },
   {
-    path: "solicitar-acceso",
+    path: "solicitar-demo",
     loadComponent: () =>
       import("./pages/access-request-page.component").then((m) => m.AccessRequestPageComponent),
     data: { locale: "es" },
   },
   {
-    path: "en/request-access",
+    path: "en/request-demo",
     loadComponent: () =>
       import("./pages/access-request-page.component").then((m) => m.AccessRequestPageComponent),
     data: { locale: "en" },
+  },
+  {
+    path: "solicitar-acceso",
+    redirectTo: "solicitar-demo",
+    pathMatch: "full",
+  },
+  {
+    path: "en/request-access",
+    redirectTo: "en/request-demo",
+    pathMatch: "full",
   },
   {
     path: "login",

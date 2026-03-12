@@ -1,80 +1,196 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { ActivatedRoute, RouterModule } from "@angular/router";
-import { DEFAULT_PORTAL_SETTINGS, getAlternatePublicPage, getPublicNavigation, getPublicPage, PublicLocale } from "../content/public-site";
+import {
+  DEFAULT_PORTAL_SETTINGS,
+  getAlternatePublicPage,
+  getPublicNavigation,
+  getPublicPage,
+  PublicLocale,
+} from "../content/public-site";
 import { BlogPostSummary, PlatformPublicResponse, PortalSettings } from "../core/models";
 import { PortalApiService } from "../core/portal-api.service";
-import { SeoService } from "../services/seo.service";
 import { buildPageSeo } from "../services/seo-utils";
+import { SeoService } from "../services/seo.service";
+import { MarketingFrameComponent } from "../shared/marketing-frame.component";
 
 @Component({
   selector: "app-blog-list-page",
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MarketingFrameComponent],
   template: `
-    <section class="hero-shell">
-      <div class="site-shell">
-        <header class="public-nav surface-card">
-          <a class="brand-lockup" [routerLink]="locale === 'es' ? '/' : '/en'">
-            <span class="brand-lockup__mark">T</span>
-            <span>
-              <strong>{{ platform.brandName }}</strong>
-              <small>Developed by {{ platform.developedBy }}</small>
-            </span>
-          </a>
-
-          <nav class="public-nav__links">
-            @for (item of navigation; track item.path) {
-              <a class="plain-link" [routerLink]="item.path">{{ item.navLabel }}</a>
-            }
-            <a class="plain-link" [routerLink]="alternatePage.path">{{ locale === 'es' ? 'EN' : 'ES' }}</a>
-          </nav>
-        </header>
-
-        <header class="hero-card">
-          <div class="eyebrow-row">
-            <span class="eyebrow">{{ page.eyebrow }}</span>
-            <a class="plain-link" [routerLink]="page.primaryCtaPath">{{ page.primaryCtaLabel }}</a>
+    <app-marketing-frame
+      [locale]="locale"
+      [platform]="platform"
+      [navigation]="navigation"
+      [alternatePath]="alternatePage.path"
+      [ctaLabel]="page.primaryCtaLabel"
+      [ctaPath]="page.primaryCtaPath"
+    >
+      <section class="page-hero" id="main-content">
+        <div class="site-shell">
+          <div class="breadcrumb-row">
+            <a [routerLink]="locale === 'es' ? '/' : '/en'">{{ locale === "es" ? "Inicio" : "Home" }}</a>
+            <span>/</span>
+            <span>Blog</span>
           </div>
 
-          <h1>{{ page.heroTitle }}</h1>
-          <p class="hero-copy">{{ page.heroCopy }}</p>
-          <p class="hero-summary">{{ page.heroSummary }}</p>
-        </header>
+          <div class="hero-surface">
+            <div class="hero-copy-pane">
+              <span class="eyebrow">{{ page.heroEyebrow }}</span>
+              <div class="badge-row">
+                <span class="badge" *ngFor="let badge of page.heroBadges">{{ badge }}</span>
+              </div>
+              <h1>{{ page.heroTitle }}</h1>
+              <p class="hero-copy">{{ page.heroCopy }}</p>
+              <p class="hero-summary">{{ page.heroSummary }}</p>
+              <div class="hero-actions">
+                <a class="button button-primary" [routerLink]="page.primaryCtaPath">{{ page.primaryCtaLabel }}</a>
+                <a class="button button-secondary" [routerLink]="page.secondaryCtaPath">{{ page.secondaryCtaLabel }}</a>
+              </div>
+            </div>
 
-        <section class="feature-band" *ngIf="posts.length; else emptyState">
-          <article class="surface-card feature-band__item" *ngFor="let post of posts">
-            <span class="eyebrow">{{ post.category || (locale === 'es' ? 'Editorial' : 'Editorial') }}</span>
+            <aside class="hero-visual hero-visual--editorial">
+              <img class="hero-visual__image" [src]="page.heroImage" [alt]="page.heroImageAlt" />
+              <div class="hero-visual__note">
+                <span class="eyebrow">{{ locale === "es" ? "Mapa editorial" : "Editorial map" }}</span>
+                <h2>
+                  {{
+                    locale === "es"
+                      ? "Contenido pensado para posicionar, educar y empujar a demo."
+                      : "Content built to rank, educate and move people toward a demo."
+                  }}
+                </h2>
+                <ul class="plain-list plain-list--tight">
+                  <li *ngFor="let proof of page.leadInProofs">{{ proof }}</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="lead-in-section">
+        <div class="site-shell lead-in-panel">
+          <div>
+            <span class="eyebrow">{{ locale === "es" ? "Enfoque editorial" : "Editorial focus" }}</span>
+            <h2>{{ page.leadInTitle }}</h2>
+            <p>{{ page.leadInBody }}</p>
+          </div>
+          <div class="proof-list">
+            <article class="proof-item" *ngFor="let proof of page.leadInProofs">
+              <span class="proof-item__dot"></span>
+              <p>{{ proof }}</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section" *ngFor="let section of page.sections">
+        <div class="site-shell">
+          <div class="section-heading">
+            <span class="eyebrow">{{ section.eyebrow }}</span>
+            <h2>{{ section.title }}</h2>
+            <p>{{ section.intro }}</p>
+          </div>
+          <div class="content-grid content-grid--three">
+            <article class="feature-card" *ngFor="let card of section.cards">
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.body }}</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <div class="site-shell">
+          <div class="section-heading">
+            <span class="eyebrow">{{ locale === "es" ? "Artículos" : "Articles" }}</span>
             <h2>
-              <a class="plain-link" [routerLink]="articlePath(post)">{{ post.title }}</a>
+              {{
+                locale === "es"
+                  ? "Contenido publicado y preparado para enlazar con la propuesta principal."
+                  : "Published content prepared to link back into the main value proposition."
+              }}
             </h2>
-            <p>{{ post.summary }}</p>
-            <div class="hero-meta">
-              <span>{{ post.author }}</span>
-              <span>{{ post.publishedAt | date: 'mediumDate' }}</span>
-              <span>{{ post.locale.toUpperCase() }}</span>
-            </div>
-            <div class="hero-actions">
-              <a class="button button-primary" [routerLink]="articlePath(post)">
-                {{ locale === 'es' ? 'Leer articulo' : 'Read article' }}
-              </a>
-            </div>
-          </article>
-        </section>
+            <p>
+              {{
+                locale === "es"
+                  ? "Cada pieza debe ayudar a rankear, reforzar autoridad y enviar tráfico a las páginas comerciales correctas."
+                  : "Every piece should help rankings, reinforce authority and send traffic to the right commercial pages."
+              }}
+            </p>
+          </div>
 
-        <ng-template #emptyState>
-          <section class="surface-card public-cta-band">
-            <div>
-              <span class="eyebrow">{{ locale === 'es' ? 'Proximamente' : 'Coming soon' }}</span>
-              <h2>{{ locale === 'es' ? 'El blog se esta poblando desde Auctorio.' : 'The blog is being filled from Auctorio.' }}</h2>
-              <p>{{ locale === 'es'
-                ? 'Las nuevas piezas editoriales se publicaran aqui en cuanto queden aprobadas.'
-                : 'New editorial pieces will appear here as soon as they are approved.' }}</p>
+          <div class="blog-grid" *ngIf="posts.length; else emptyState">
+            <article class="blog-card" *ngFor="let post of posts">
+              <img
+                class="blog-card__image"
+                [src]="post.imageUrl || '/assets/talkaris-editorial-campaign.png'"
+                [alt]="post.imageUrl ? post.title : ''"
+                loading="lazy"
+              />
+              <div class="blog-card__body">
+                <span class="badge badge--ghost">{{ post.category || (locale === "es" ? "Editorial" : "Editorial") }}</span>
+                <h3>
+                  <a [routerLink]="articlePath(post)">{{ post.title }}</a>
+                </h3>
+                <p>{{ post.summary }}</p>
+                <div class="hero-meta">
+                  <span>{{ post.author }}</span>
+                  <span>{{ post.publishedAt | date: "mediumDate" }}</span>
+                </div>
+                <a class="plain-link" [routerLink]="articlePath(post)">
+                  {{ locale === "es" ? "Leer artículo" : "Read article" }}
+                </a>
+              </div>
+            </article>
+          </div>
+
+          <ng-template #emptyState>
+            <div class="empty-state-card">
+              <div>
+                <span class="eyebrow">{{ locale === "es" ? "Próximamente" : "Coming soon" }}</span>
+                <h3>
+                  {{
+                    locale === "es"
+                      ? "El blog ya tiene arquitectura editorial aunque aún no tenga piezas publicadas."
+                      : "The blog already has an editorial architecture even if no posts are live yet."
+                  }}
+                </h3>
+                <p>
+                  {{
+                    locale === "es"
+                      ? "Las publicaciones llegarán desde Auctorio. Mientras tanto, la capa de diseño, enlazado y SEO queda preparada para escalar contenido sin rehacer el front."
+                      : "Posts will arrive from Auctorio. In the meantime, the design, linking and SEO layer is already prepared to scale content without reworking the front end."
+                  }}
+                </p>
+              </div>
+              <div class="hero-actions">
+                <a class="button button-primary" [routerLink]="page.primaryCtaPath">{{ page.primaryCtaLabel }}</a>
+                <a class="button button-secondary" [routerLink]="locale === 'es' ? '/funcionalidades' : '/en/features'">
+                  {{ locale === "es" ? "Ver plataforma" : "See platform" }}
+                </a>
+              </div>
             </div>
-          </section>
-        </ng-template>
-      </div>
-    </section>
+          </ng-template>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <div class="site-shell cta-panel">
+          <div>
+            <span class="eyebrow">{{ page.ctaPanel.eyebrow }}</span>
+            <h2>{{ page.ctaPanel.title }}</h2>
+            <p>{{ page.ctaPanel.body }}</p>
+          </div>
+          <div class="hero-actions">
+            <a class="button button-primary" [routerLink]="page.ctaPanel.primaryPath">{{ page.ctaPanel.primaryLabel }}</a>
+            <a class="button button-secondary" [routerLink]="page.ctaPanel.secondaryPath">{{ page.ctaPanel.secondaryLabel }}</a>
+          </div>
+        </div>
+      </section>
+    </app-marketing-frame>
   `,
 })
 export class BlogListPageComponent implements OnInit {

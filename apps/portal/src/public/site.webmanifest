@@ -1,11 +1,11 @@
 {
   "name": "Talkaris",
   "short_name": "Talkaris",
-  "description": "Talkaris AI chat platform for websites and products.",
+  "description": "Conversational AI platform for websites, SaaS products and support operations.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#081220",
-  "theme_color": "#081220",
+  "background_color": "#081424",
+  "theme_color": "#081424",
   "icons": [
     {
       "src": "/assets/talkaris-icon-192.svg",

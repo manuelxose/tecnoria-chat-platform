@@ -19,7 +19,7 @@ export class SeoService {
     this.meta.updateTag({ name: "robots", content: payload.robots });
     this.meta.updateTag({ name: "author", content: payload.siteName });
     this.meta.updateTag({ name: "application-name", content: payload.siteName });
-    this.meta.updateTag({ name: "theme-color", content: "#081220" });
+    this.meta.updateTag({ name: "theme-color", content: "#081424" });
     this.meta.updateTag({ property: "og:title", content: payload.pageTitle });
     this.meta.updateTag({ property: "og:description", content: payload.description });
     this.meta.updateTag({ property: "og:type", content: "website" });

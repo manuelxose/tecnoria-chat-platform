@@ -54,7 +54,7 @@ async function createProject(args: Record<string, string>): Promise<void> {
       args.welcome ?? "Hola. Soy el asistente de Talkaris. Puedo ayudarte con la plataforma, sus integraciones, seguridad y acceso comercial.",
     ctaConfig: {
       primaryLabel: "Solicitar demo",
-      primaryUrl: `${publicSiteUrl}/solicitar-acceso`,
+      primaryUrl: `${publicSiteUrl}/solicitar-demo`,
       secondaryLabel: "Ver funcionalidades",
       secondaryUrl: `${publicSiteUrl}/funcionalidades`,
       salesKeywords: ["precio", "presupuesto", "contacto", "demo", "reunion", "chatbot"],

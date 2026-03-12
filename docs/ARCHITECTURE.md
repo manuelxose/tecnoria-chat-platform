@@ -23,7 +23,7 @@ indexable EN routes:
 /en /en/features /en/integrations /en/use-cases /en/faq
 
 noindex routes:
-/solicitar-acceso /en/request-access /login /reset-password /app /admin
+/solicitar-demo /en/request-demo /login /reset-password /app /admin
 ```
 
 ## Data model

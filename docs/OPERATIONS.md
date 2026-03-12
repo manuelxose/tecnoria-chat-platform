@@ -27,7 +27,7 @@ npm run dev:ingest
 
 ## Portal access flow
 
-1. A visitor requests access at `/solicitar-acceso` or `/en/request-access`.
+1. A visitor requests a demo at `/solicitar-demo` or `/en/request-demo`.
 2. Superadmin reviews `access_requests` in `/admin`.
 3. On approval:
    - the tenant is created or updated,
