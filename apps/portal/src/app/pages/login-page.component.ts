@@ -118,19 +118,22 @@ import { buildNoIndexSeo } from "../services/seo-utils";
   styles: [`
     :host {
       display: block;
-      min-height: 100vh;
+      width: 100%;
+      overflow-x: hidden;
     }
     .login-shell {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       min-height: 100vh;
+      width: 100%;
     }
     .login-panel {
+      min-width: 0;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;
-      padding: 3rem 2rem;
+      align-items: flex-start;
+      padding: 4rem 3rem 4rem 10%;
       gap: 2rem;
       background: var(--paper);
     }
@@ -138,7 +141,6 @@ import { buildNoIndexSeo } from "../services/seo-utils";
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      align-self: flex-start;
       max-width: 400px;
       width: 100%;
     }
@@ -189,7 +191,6 @@ import { buildNoIndexSeo } from "../services/seo-utils";
       display: flex;
       gap: 1.25rem;
       flex-wrap: wrap;
-      align-self: flex-start;
       max-width: 400px;
       width: 100%;
     }
@@ -202,15 +203,17 @@ import { buildNoIndexSeo } from "../services/seo-utils";
     }
     /* Aside */
     .login-aside {
+      min-width: 0;
       background: color-mix(in srgb, var(--brand) 6%, var(--paper));
       border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 3rem 2.5rem;
+      padding: 3rem 2rem;
+      overflow: hidden;
     }
     .login-aside__inner {
-      max-width: 380px;
+      max-width: 360px;
       width: 100%;
       display: flex;
       flex-direction: column;
@@ -288,7 +291,7 @@ import { buildNoIndexSeo } from "../services/seo-utils";
     .login-mockup__dot--green { background: #22c55e; }
     .login-mockup__dot--amber { background: #f59e0b; }
     /* Responsive */
-    @media (max-width: 768px) {
+    @media (max-width: 960px) {
       .login-shell {
         grid-template-columns: 1fr;
       }
@@ -296,7 +299,8 @@ import { buildNoIndexSeo } from "../services/seo-utils";
         display: none;
       }
       .login-panel {
-        padding: 2rem 1.5rem;
+        padding: 3rem 2rem;
+        align-items: center;
       }
     }
   `],
