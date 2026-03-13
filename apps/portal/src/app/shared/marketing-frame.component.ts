@@ -58,9 +58,6 @@ import { LogoBarComponent } from "./logo-bar.component";
               >
                 {{ item.navLabel }}
               </a>
-              <a class="site-nav__link" [routerLink]="'/login'" (click)="menuOpen = false">
-                {{ locale === "es" ? "Portal" : "Portal" }}
-              </a>
               <a class="site-nav__link site-nav__link--lang" [routerLink]="alternatePath" (click)="menuOpen = false">
                 {{ locale === "es" ? "EN" : "ES" }}
               </a>
