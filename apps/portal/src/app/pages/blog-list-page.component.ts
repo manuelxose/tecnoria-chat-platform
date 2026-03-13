@@ -1,5 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import {
   DEFAULT_PORTAL_SETTINGS,
@@ -17,7 +18,7 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
 @Component({
   selector: "app-blog-list-page",
   standalone: true,
-  imports: [CommonModule, RouterModule, MarketingFrameComponent],
+  imports: [CommonModule, RouterModule, FormsModule, MarketingFrameComponent],
   template: `
     <app-marketing-frame
       [locale]="locale"
@@ -122,30 +123,96 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
             </p>
           </div>
 
-          <div class="blog-grid" *ngIf="posts.length; else emptyState">
-            <article class="blog-card" *ngFor="let post of posts">
+          <!-- Search + category filter -->
+          <div class="blog-controls" *ngIf="posts.length">
+            <div class="blog-search">
+              <input
+                [(ngModel)]="searchQuery"
+                (ngModelChange)="applyFilters()"
+                [placeholder]="locale === 'es' ? 'Buscar artículos...' : 'Search articles...'"
+                class="blog-search__input"
+                type="search"
+                aria-label="Search blog posts"
+              />
+            </div>
+            <div class="blog-categories" *ngIf="categories.length > 1">
+              <button
+                class="blog-category-btn"
+                [class.blog-category-btn--active]="activeCategory === ''"
+                (click)="setCategory('')"
+              >
+                {{ locale === "es" ? "Todos" : "All" }}
+              </button>
+              <button
+                class="blog-category-btn"
+                [class.blog-category-btn--active]="activeCategory === cat"
+                *ngFor="let cat of categories"
+                (click)="setCategory(cat)"
+              >
+                {{ cat }}
+              </button>
+            </div>
+          </div>
+
+          <ng-container *ngIf="posts.length; else emptyState">
+            <!-- Featured post (first result) -->
+            <article class="blog-card blog-card--featured" *ngIf="featuredPost">
               <img
                 class="blog-card__image"
-                [src]="post.imageUrl || '/assets/talkaris-editorial-campaign.png'"
-                [alt]="post.imageUrl ? post.title : ''"
-                loading="lazy"
+                [src]="featuredPost.imageUrl || '/assets/talkaris-editorial-campaign.png'"
+                [alt]="featuredPost.imageUrl ? featuredPost.title : ''"
+                loading="eager"
               />
               <div class="blog-card__body">
-                <span class="badge badge--ghost">{{ post.category || (locale === "es" ? "Editorial" : "Editorial") }}</span>
-                <h3>
-                  <a [routerLink]="articlePath(post)">{{ post.title }}</a>
-                </h3>
-                <p>{{ post.summary }}</p>
+                <span class="badge">{{ featuredPost.category || (locale === "es" ? "Editorial" : "Editorial") }}</span>
+                <h2>
+                  <a [routerLink]="articlePath(featuredPost)">{{ featuredPost.title }}</a>
+                </h2>
+                <p>{{ featuredPost.summary }}</p>
                 <div class="hero-meta">
-                  <span>{{ post.author }}</span>
-                  <span>{{ post.publishedAt | date: "mediumDate" }}</span>
+                  <span>{{ featuredPost.author }}</span>
+                  <span>{{ featuredPost.publishedAt | date: "mediumDate" }}</span>
                 </div>
-                <a class="plain-link" [routerLink]="articlePath(post)">
-                  {{ locale === "es" ? "Leer artículo" : "Read article" }}
+                <a class="plain-link" [routerLink]="articlePath(featuredPost)">
+                  {{ locale === "es" ? "Leer artículo" : "Read article" }} →
                 </a>
               </div>
             </article>
-          </div>
+
+            <!-- Post grid -->
+            <div class="blog-grid" *ngIf="listedPosts.length">
+              <article class="blog-card" *ngFor="let post of listedPosts">
+                <img
+                  class="blog-card__image"
+                  [src]="post.imageUrl || '/assets/talkaris-editorial-campaign.png'"
+                  [alt]="post.imageUrl ? post.title : ''"
+                  loading="lazy"
+                />
+                <div class="blog-card__body">
+                  <span class="badge badge--ghost">{{ post.category || (locale === "es" ? "Editorial" : "Editorial") }}</span>
+                  <h3>
+                    <a [routerLink]="articlePath(post)">{{ post.title }}</a>
+                  </h3>
+                  <p>{{ post.summary }}</p>
+                  <div class="hero-meta">
+                    <span>{{ post.author }}</span>
+                    <span>{{ post.publishedAt | date: "mediumDate" }}</span>
+                  </div>
+                  <a class="plain-link" [routerLink]="articlePath(post)">
+                    {{ locale === "es" ? "Leer artículo" : "Read article" }}
+                  </a>
+                </div>
+              </article>
+            </div>
+
+            <!-- No results after filter -->
+            <div class="blog-no-results" *ngIf="!featuredPost && !listedPosts.length">
+              <p>{{ locale === "es" ? "No hay artículos que coincidan con tu búsqueda." : "No articles match your search." }}</p>
+              <button class="button button-secondary" (click)="clearFilters()">
+                {{ locale === "es" ? "Limpiar filtros" : "Clear filters" }}
+              </button>
+            </div>
+          </ng-container>
 
           <ng-template #emptyState>
             <div class="empty-state-card">
@@ -192,6 +259,99 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
       </section>
     </app-marketing-frame>
   `,
+  styles: [`
+    .blog-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .blog-search__input {
+      width: 100%;
+      max-width: 480px;
+      padding: 0.625rem 1rem;
+      border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+      border-radius: 0.5rem;
+      background: var(--paper);
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+    .blog-search__input:focus {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+    .blog-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .blog-category-btn {
+      padding: 0.375rem 0.875rem;
+      border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+      border-radius: 2rem;
+      background: transparent;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: color-mix(in srgb, var(--ink) 60%, transparent);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .blog-category-btn:hover,
+    .blog-category-btn--active {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+    .blog-card--featured {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+      border-radius: 1rem;
+      overflow: hidden;
+      background: var(--paper);
+    }
+    .blog-card--featured .blog-card__image {
+      width: 100%;
+      height: 100%;
+      min-height: 280px;
+      object-fit: cover;
+    }
+    .blog-card--featured .blog-card__body {
+      padding: 2rem 2rem 2rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .blog-card--featured h2 {
+      font-size: 1.5rem;
+      line-height: 1.3;
+    }
+    .blog-card--featured h2 a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .blog-card--featured h2 a:hover {
+      color: var(--brand);
+    }
+    .blog-no-results {
+      text-align: center;
+      padding: 3rem 0;
+      color: color-mix(in srgb, var(--ink) 60%, transparent);
+    }
+    .blog-no-results p {
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 768px) {
+      .blog-card--featured {
+        grid-template-columns: 1fr;
+      }
+      .blog-card--featured .blog-card__body {
+        padding: 1.5rem;
+      }
+    }
+  `],
 })
 export class BlogListPageComponent implements OnInit {
   locale: PublicLocale = "es";
@@ -201,6 +361,10 @@ export class BlogListPageComponent implements OnInit {
   platform: PortalSettings = DEFAULT_PORTAL_SETTINGS;
   publicData: PlatformPublicResponse | null = null;
   posts: BlogPostSummary[] = [];
+  filteredPosts: BlogPostSummary[] = [];
+  searchQuery = "";
+  activeCategory = "";
+  categories: string[] = [];
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -226,9 +390,43 @@ export class BlogListPageComponent implements OnInit {
     try {
       const response = await this.api.publicBlog(this.locale, 24);
       this.posts = response.items;
+      this.filteredPosts = this.posts;
+      this.categories = [...new Set(this.posts.map((p) => p.category).filter(Boolean))] as string[];
     } catch {
       this.posts = [];
+      this.filteredPosts = [];
     }
+  }
+
+  get featuredPost(): BlogPostSummary | null {
+    return this.filteredPosts[0] ?? null;
+  }
+
+  get listedPosts(): BlogPostSummary[] {
+    return this.filteredPosts.slice(1);
+  }
+
+  applyFilters(): void {
+    const query = this.searchQuery.toLowerCase().trim();
+    this.filteredPosts = this.posts.filter((post) => {
+      const matchesCategory = !this.activeCategory || post.category === this.activeCategory;
+      const matchesSearch =
+        !query ||
+        post.title.toLowerCase().includes(query) ||
+        (post.summary || "").toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
+    });
+  }
+
+  setCategory(cat: string): void {
+    this.activeCategory = cat;
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchQuery = "";
+    this.activeCategory = "";
+    this.filteredPosts = this.posts;
   }
 
   articlePath(post: BlogPostSummary): string {

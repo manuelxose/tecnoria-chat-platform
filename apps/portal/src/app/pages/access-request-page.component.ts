@@ -37,6 +37,26 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
               </article>
             </div>
 
+            <!-- What the demo includes -->
+            <div class="demo-includes">
+              <span class="eyebrow">{{ copy.includesEyebrow }}</span>
+              <h2>{{ copy.includesTitle }}</h2>
+              <ul class="demo-checklist">
+                <li *ngFor="let item of copy.includesItems">
+                  <span class="demo-checklist__check">✓</span>
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+
+            <!-- Why request the demo -->
+            <div class="demo-why">
+              <span class="eyebrow">{{ copy.whyEyebrow }}</span>
+              <div class="demo-why__items">
+                <p *ngFor="let item of copy.whyItems">{{ item }}</p>
+              </div>
+            </div>
+
             <div class="section-heading section-heading--inline">
               <span class="eyebrow">{{ copy.processEyebrow }}</span>
               <h2>{{ copy.processTitle }}</h2>
@@ -180,6 +200,11 @@ type AccessRequestCopy = {
   title: string;
   summary: string;
   detail: string;
+  includesEyebrow: string;
+  includesTitle: string;
+  includesItems: string[];
+  whyEyebrow: string;
+  whyItems: string[];
   processEyebrow: string;
   processTitle: string;
   formEyebrow: string;
@@ -235,21 +260,37 @@ const ACCESS_REQUEST_COPY: Record<PublicLocale, AccessRequestCopy> = {
     path: "/solicitar-demo",
     alternatePath: "/en/request-demo",
     ctaLabel: "Solicitar demo",
+    includesEyebrow: "Lo que incluye",
+    includesTitle: "Lo que incluye la demo.",
+    includesItems: [
+      "Review de tu caso de uso concreto (30 min)",
+      "Demo en vivo del widget en tu tipo de web",
+      "Revisión de encaje técnico con tu stack",
+      "Estimación de tiempo hasta producción",
+      "Acceso a entorno de pruebas si hay fit",
+      "Sin compromiso ni permanencia",
+    ],
+    whyEyebrow: "Por qué pedirla",
+    whyItems: [
+      "Sin permanencia mínima, cancelación en cualquier momento.",
+      "Demo orientada a tu caso: no una presentación genérica.",
+      "Acceso a producción en 48h si hay fit.",
+    ],
     proofs: [
       {
-        value: "Enfoque",
-        label: "Demo orientada a negocio",
-        detail: "Revisamos objetivo, superficie, CTA y valor percibido.",
+        value: "48h",
+        label: "De solicitud a entorno activo",
+        detail: "Si hay fit técnico, estás en producción rápido.",
       },
       {
-        value: "Stack",
-        label: "Encaje técnico real",
-        detail: "Validamos integración, conocimiento y gobernanza.",
+        value: "0€",
+        label: "Coste de la demo",
+        detail: "Revisar el encaje no te cuesta nada.",
       },
       {
-        value: "Decisión",
-        label: "Siguiente paso claro",
-        detail: "Saldrás con criterios concretos para avanzar o descartar.",
+        value: "1 snippet",
+        label: "Integración completa en web",
+        detail: "Sin frameworks, sin build steps, sin riesgos.",
       },
     ],
     steps: [
@@ -299,21 +340,37 @@ const ACCESS_REQUEST_COPY: Record<PublicLocale, AccessRequestCopy> = {
     path: "/en/request-demo",
     alternatePath: "/solicitar-demo",
     ctaLabel: "Request demo",
+    includesEyebrow: "What is included",
+    includesTitle: "What the demo includes.",
+    includesItems: [
+      "Review of your specific use case (30 min)",
+      "Live widget demo on your type of website",
+      "Technical fit review with your stack",
+      "Estimated time to production",
+      "Access to test environment if there is fit",
+      "No commitment or lock-in",
+    ],
+    whyEyebrow: "Why request it",
+    whyItems: [
+      "No minimum commitment, cancel at any time.",
+      "Demo tailored to your case: not a generic presentation.",
+      "Production access in 48h if there is fit.",
+    ],
     proofs: [
       {
-        value: "Focus",
-        label: "Business-led demo",
-        detail: "We review goal, surface, CTA and perceived value.",
+        value: "48h",
+        label: "From request to active environment",
+        detail: "If there is technical fit, you are live fast.",
       },
       {
-        value: "Stack",
-        label: "Real technical fit",
-        detail: "We validate integration, knowledge and governance.",
+        value: "€0",
+        label: "Cost of the demo",
+        detail: "Reviewing the fit costs you nothing.",
       },
       {
-        value: "Decision",
-        label: "Clear next step",
-        detail: "You leave with concrete criteria to move forward or reject.",
+        value: "1 snippet",
+        label: "Full web integration",
+        detail: "No frameworks, no build steps, no risk.",
       },
     ],
     steps: [

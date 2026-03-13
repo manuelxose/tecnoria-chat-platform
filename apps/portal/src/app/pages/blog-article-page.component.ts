@@ -40,6 +40,9 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
               <span>{{ post.author }}</span>
               <span>{{ post.publishedAt | date: "mediumDate" }}</span>
               <span>{{ post.locale.toUpperCase() }}</span>
+              <span *ngIf="readingTime > 0">
+                {{ readingTime }} {{ locale === "es" ? "min de lectura" : "min read" }}
+              </span>
             </div>
 
             <img
@@ -74,6 +77,21 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
 
             <article class="article-body-card">
               <div class="article-body" [innerHTML]="post.bodyHtml"></div>
+
+              <!-- Lead magnet block -->
+              <div class="article-lead-magnet">
+                <span class="eyebrow">{{ locale === "es" ? "¿Te resultó útil?" : "Found this useful?" }}</span>
+                <h2>{{ locale === "es" ? "¿Buscas un stack conversacional serio para tu empresa?" : "Looking for a serious conversational stack for your company?" }}</h2>
+                <p>{{ locale === "es" ? "Talkaris es la plataforma que combina widget, conocimiento gobernado y analítica para equipos B2B que necesitan más que un chatbot." : "Talkaris is the platform combining widget, governed knowledge and analytics for B2B teams that need more than a chatbot." }}</p>
+                <div class="hero-actions">
+                  <a class="button button-primary" [routerLink]="locale === 'es' ? '/solicitar-demo' : '/en/request-demo'">
+                    {{ locale === "es" ? "Solicitar demo" : "Request demo" }}
+                  </a>
+                  <a class="button button-secondary" [routerLink]="locale === 'es' ? '/funcionalidades' : '/en/features'">
+                    {{ locale === "es" ? "Ver funcionalidades" : "See features" }}
+                  </a>
+                </div>
+              </div>
             </article>
           </div>
         </div>
@@ -114,6 +132,7 @@ export class BlogArticlePageComponent implements OnInit {
   platform: PortalSettings = DEFAULT_PORTAL_SETTINGS;
   navigation = getPublicNavigation("es");
   post: BlogPostDetail | null = null;
+  readingTime = 0;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -139,6 +158,11 @@ export class BlogArticlePageComponent implements OnInit {
 
     try {
       this.post = await this.api.publicBlogPost(slug);
+      if (this.post.bodyHtml) {
+        const text = this.post.bodyHtml.replace(/<[^>]+>/g, " ");
+        const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+        this.readingTime = Math.max(1, Math.round(wordCount / 200));
+      }
       this.seo.update(
         buildBlogArticleSeo(
           {

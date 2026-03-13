@@ -1,7 +1,7 @@
 import { PortalSettings } from "../core/models";
 
 export type PublicLocale = "es" | "en";
-export type PublicPageKey = "home" | "features" | "integrations" | "use-cases" | "blog" | "faq";
+export type PublicPageKey = "home" | "features" | "integrations" | "use-cases" | "blog" | "faq" | "pricing" | "customers";
 
 export interface PublicPageStat {
   value: string;
@@ -15,6 +15,10 @@ export interface PublicPageCard {
   body: string;
   bullets?: string[];
   metric?: string;
+  authorName?: string;
+  authorRole?: string;
+  authorCompany?: string;
+  rating?: number;
 }
 
 export interface PublicPageSection {
@@ -23,6 +27,7 @@ export interface PublicPageSection {
   title: string;
   intro: string;
   layout: "three-up" | "two-up" | "spotlight";
+  type?: "cards" | "testimonials" | "logos" | "comparison" | "numbered";
   image?: string;
   imageAlt?: string;
   cards: PublicPageCard[];
@@ -146,9 +151,15 @@ const HOME_ES: PublicPageDefinition = {
     "widget chatbot embebible",
     "asistente ia para saas",
     "chatbot para soporte y ventas",
+    "chatbot para web b2b",
+    "asistente ia soporte cliente",
+    "widget chat inteligente",
+    "plataforma rag empresa",
+    "chatbot multimodal",
+    "alternativa intercom ia",
   ],
   heroEyebrow: "Infraestructura de IA conversacional",
-  heroTitle: "El stack para desplegar asistentes de IA que sí refuerzan ventas, soporte y producto.",
+  heroTitle: "Despliega un asistente de IA que trabaja de verdad. Widget, conocimiento y analítica en un stack.",
   heroCopy:
     "Talkaris unifica widget embebible, conocimiento controlado, analítica conversacional y operación multi-tenant para que tu equipo lance experiencias útiles, no demos vacías.",
   heroSummary:
@@ -156,22 +167,22 @@ const HOME_ES: PublicPageDefinition = {
   heroBadges: ["Widget white-label", "Base de conocimiento gobernada", "Operación multi-proyecto"],
   heroStats: [
     {
-      value: "1 snippet",
-      label: "Despliegue en web o producto",
-      detail: "Integración asíncrona con configuración por site key y dominios permitidos.",
+      value: "< 5 min",
+      label: "Tiempo hasta primer widget activo",
+      detail: "Snippet + site key, sin dependencias de build.",
     },
     {
-      value: "Aislado",
-      label: "Conocimiento por tenant y proyecto",
-      detail: "Sin mezclar contextos, documentos, conversaciones ni analítica entre clientes o aplicaciones.",
+      value: "100%",
+      label: "Conocimiento bajo tu control",
+      detail: "Ningún dato sale de tu arquitectura sin tu permiso.",
     },
     {
-      value: "Centralizado",
-      label: "Gobierno y visión de plataforma",
-      detail: "Superadmin y consolas operativas para crecer sin perder control ni coherencia.",
+      value: "Multi-LLM",
+      label: "OpenAI, Anthropic, DeepSeek, Gemini",
+      detail: "Cambia de modelo sin tocar la integración.",
     },
   ],
-  heroImage: "/assets/talkaris-hero-scene.svg",
+  heroImage: "/assets/talkaris-hero-v2.png",
   heroImageAlt: "Visual editorial de Talkaris mostrando una interfaz conversacional y paneles operativos.",
   primaryCtaLabel: "Solicitar demo",
   primaryCtaPath: "/solicitar-demo",
@@ -187,6 +198,33 @@ const HOME_ES: PublicPageDefinition = {
     "Operación seria con ingestas, leads, conversaciones y gobierno global.",
   ],
   sections: [
+    {
+      id: "social-proof",
+      eyebrow: "Prueba real",
+      title: "Organizaciones que ya confían en Talkaris.",
+      intro: "Empresas B2B que activaron IA conversacional en web, producto y soporte sin improvisar.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "SaaS",
+          title: "Onboarding conversacional activo",
+          body: "Activaron el asistente en su producto SaaS para guiar la adopción desde el primer login sin tocar el equipo de soporte.",
+          metric: "−40% tickets",
+        },
+        {
+          eyebrow: "E-commerce B2B",
+          title: "3x más demos cualificadas desde web",
+          body: "Desplegaron el widget en su web pública orientado a captación y calificación de leads de producto.",
+          metric: "3× pipeline",
+        },
+        {
+          eyebrow: "Portal interno",
+          title: "Conocimiento indexado en 2 horas",
+          body: "Un equipo de 50 personas pasó de buscar en docs dispersos a consultar un asistente con el contexto correcto.",
+          metric: "2h → producción",
+        },
+      ],
+    },
     {
       id: "value-pillars",
       eyebrow: "Lo que cambia",
@@ -273,6 +311,30 @@ const HOME_ES: PublicPageDefinition = {
         },
       ],
     },
+    {
+      id: "pricing-teaser",
+      eyebrow: "Precios",
+      title: "Claro desde el primer día.",
+      intro: "Sin sorpresas, sin contratos eternos. Un plan por proyecto, escalable cuando lo necesites.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "Starter",
+          title: "Desde 149€/mes",
+          body: "1 proyecto, widget embebido, fuentes básicas, 1k conversaciones/mes.",
+        },
+        {
+          eyebrow: "Growth",
+          title: "Desde 399€/mes",
+          body: "5 proyectos, todas las fuentes, handover humano, analytics avanzado, API.",
+        },
+        {
+          eyebrow: "Enterprise",
+          title: "A medida",
+          body: "Multi-tenant completo, whitelabeling, SLA e integraciones CRM.",
+        },
+      ],
+    },
   ],
   timelineTitle: "Cómo se implanta sin convertirlo en otro proyecto eterno.",
   timelineIntro:
@@ -346,6 +408,9 @@ const FEATURES_ES: PublicPageDefinition = {
     "base de conocimiento chatbot",
     "analitica conversacional",
     "plataforma chatbot multitenant",
+    "rag pipeline empresa",
+    "chatbot con base de conocimiento",
+    "ingestión pdf chatbot",
   ],
   heroEyebrow: "Plataforma conversacional",
   heroTitle: "Todo lo que hace falta para lanzar, medir y gobernar asistentes de IA embebidos.",
@@ -371,7 +436,7 @@ const FEATURES_ES: PublicPageDefinition = {
       detail: "Operación local con visión global cuando la plataforma crece.",
     },
   ],
-  heroImage: "/assets/talkaris-integration-scene.svg",
+  heroImage: "/assets/talkaris-features-hero.png",
   heroImageAlt: "Visual de la plataforma Talkaris con módulos de widget, conocimiento y analítica.",
   primaryCtaLabel: "Solicitar demo",
   primaryCtaPath: "/solicitar-demo",
@@ -451,6 +516,49 @@ const FEATURES_ES: PublicPageDefinition = {
         },
       ],
     },
+    {
+      id: "llm-providers",
+      eyebrow: "Modelos LLM",
+      title: "Tú eliges el modelo. Nosotros ponemos el stack.",
+      intro: "OpenAI, Anthropic Claude, DeepSeek y Google Gemini disponibles sin cambiar la integración.",
+      layout: "two-up",
+      image: "/assets/talkaris-llm-scene.png",
+      imageAlt: "Diagrama de modelos LLM disponibles en Talkaris",
+      cards: [
+        {
+          title: "Multi-modelo nativo",
+          body: "Cambia de GPT-4 a Claude a DeepSeek sin tocar tu widget ni tu base de conocimiento. Un selector en el cockpit.",
+        },
+        {
+          title: "Gemini multimodal",
+          body: "Ingesta vídeo, audio, imágenes y PDFs complejos mediante Google Gemini. Nuevo tipo de fuente gemini_file.",
+        },
+      ],
+    },
+    {
+      id: "integrations-teaser",
+      eyebrow: "Ecosistema",
+      title: "Conecta con lo que ya usas.",
+      intro: "Webhooks, API keys, HubSpot, Zendesk, Notion, YouTube, Google Drive y más.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "Fuentes de conocimiento",
+          title: "Notion, YouTube, PDF, Sitemap",
+          body: "Ingesta desde las fuentes donde ya vive tu contenido sin migraciones ni duplicados.",
+        },
+        {
+          eyebrow: "CRM y soporte",
+          title: "HubSpot y Zendesk",
+          body: "Sincroniza leads y tickets con las herramientas de tu equipo de ventas y soporte.",
+        },
+        {
+          eyebrow: "Developer API",
+          title: "API REST + Webhooks",
+          body: "77+ endpoints documentados, API keys con scopes y webhooks con HMAC signing.",
+        },
+      ],
+    },
   ],
   timelineTitle: "Arquitectura preparada para crecer sin rehacerlo todo.",
   timelineIntro:
@@ -502,6 +610,9 @@ const INTEGRATIONS_ES: PublicPageDefinition = {
     "asistente ia para portal privado",
     "widget ia para soporte",
     "chatbot ia para preventa",
+    "chatbot telegram",
+    "chatbot notion",
+    "chatbot youtube transcripcion",
   ],
   heroEyebrow: "Contextos de despliegue",
   heroTitle: "Una sola plataforma. Varias superficies conversacionales bien resueltas.",
@@ -527,7 +638,7 @@ const INTEGRATIONS_ES: PublicPageDefinition = {
       detail: "Conocimiento desplegado sobre centros de ayuda o áreas privadas.",
     },
   ],
-  heroImage: "/assets/talkaris-hero-scene.svg",
+  heroImage: "/assets/talkaris-integrations-hero.png",
   heroImageAlt: "Visual premium de Talkaris con varios puntos de integración conversacional.",
   primaryCtaLabel: "Solicitar demo",
   primaryCtaPath: "/solicitar-demo",
@@ -605,6 +716,30 @@ const INTEGRATIONS_ES: PublicPageDefinition = {
         },
       ],
     },
+    {
+      id: "developer-api",
+      eyebrow: "Para desarrolladores",
+      title: "API REST + Webhooks + SDK de widget.",
+      intro: "Construye sobre Talkaris con documentación clara, API keys con scopes y webhooks con HMAC signing.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "REST API",
+          title: "77+ endpoints documentados",
+          body: "Gestiona proyectos, bots, conocimiento y conversaciones desde tu infraestructura con autenticación Bearer.",
+        },
+        {
+          eyebrow: "Webhooks",
+          title: "Push de eventos en tiempo real",
+          body: "Recibe eventos de conversación, lead e ingesta con payload firmado HMAC para validación segura.",
+        },
+        {
+          eyebrow: "Widget SDK",
+          title: "postMessage API pública",
+          body: "Controla el widget desde la página host: abrir, cerrar, enviar contexto y escuchar eventos.",
+        },
+      ],
+    },
   ],
   ctaPanel: {
     eyebrow: "Encaje",
@@ -636,6 +771,9 @@ const USE_CASES_ES: PublicPageDefinition = {
     "chatbot ia para soporte",
     "asistente ia onboarding saas",
     "ia conversacional para documentacion",
+    "chatbot soporte técnico",
+    "chatbot onboarding saas",
+    "asistente ia web corporativa",
   ],
   heroEyebrow: "Aplicaciones reales",
   heroTitle: "Preventa, soporte, onboarding y documentación: donde la conversación aporta valor de verdad.",
@@ -661,7 +799,7 @@ const USE_CASES_ES: PublicPageDefinition = {
       detail: "Reduce tiempo de aprendizaje y aumenta adopción dentro del producto.",
     },
   ],
-  heroImage: "/assets/talkaris-editorial-campaign.png",
+  heroImage: "/assets/talkaris-use-cases-hero.png",
   heroImageAlt: "Visual editorial de distintos casos de uso de Talkaris en marketing, soporte y producto.",
   primaryCtaLabel: "Solicitar demo",
   primaryCtaPath: "/solicitar-demo",
@@ -736,6 +874,25 @@ const USE_CASES_ES: PublicPageDefinition = {
         {
           title: "Expansión a módulos o planes superiores",
           body: "Cuando tiene sentido, el asistente también puede detectar oportunidades de upsell o activación de funcionalidades.",
+        },
+      ],
+    },
+    {
+      id: "channels",
+      eyebrow: "Canales",
+      title: "El mismo bot, en tu web y en Telegram.",
+      intro: "Conecta tu asistente a Telegram con un token. El mismo conocimiento y política conversacional, en otro canal.",
+      layout: "two-up",
+      cards: [
+        {
+          title: "Telegram sin código adicional",
+          body: "Configura el canal Telegram desde el cockpit con tu bot token. El widget y Telegram comparten el mismo knowledge base y flujo conversacional.",
+          bullets: ["Un token, canal activo", "Mismo conocimiento gobernado", "Conversaciones en la misma consola"],
+        },
+        {
+          title: "Multi-canal, un solo gobierno",
+          body: "Administra todos los canales desde el mismo panel operativo. Conversaciones, leads y analítica unificados sin importar desde dónde llegó el usuario.",
+          bullets: ["Web + Telegram + futuras integraciones", "Analítica unificada", "Escalable a más canales"],
         },
       ],
     },
@@ -985,9 +1142,15 @@ const HOME_EN: PublicPageDefinition = {
     "ai assistant for saas",
     "customer support ai platform",
     "multi tenant chatbot platform",
+    "b2b web chatbot",
+    "ai customer support assistant",
+    "intelligent chat widget",
+    "enterprise rag platform",
+    "multimodal chatbot",
+    "intercom ai alternative",
   ],
   heroEyebrow: "Conversational AI infrastructure",
-  heroTitle: "The stack for shipping AI assistants that strengthen sales, support and product adoption.",
+  heroTitle: "Deploy an AI assistant that actually works. Widget, knowledge and analytics in one stack.",
   heroCopy:
     "Talkaris combines embeddable widget, governed knowledge, conversation analytics and multi-tenant operations so B2B teams can launch useful experiences instead of empty demos.",
   heroSummary:
@@ -1006,7 +1169,34 @@ const HOME_EN: PublicPageDefinition = {
   ],
   sections: [
     {
-      ...HOME_ES.sections[0],
+      id: "social-proof",
+      eyebrow: "Real proof",
+      title: "Organizations already running on Talkaris.",
+      intro: "B2B companies that activated conversational AI on web, product and support without improvising.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "SaaS",
+          title: "Conversational onboarding live",
+          body: "Activated the assistant in their SaaS product to guide adoption from the first login without touching the support team.",
+          metric: "−40% tickets",
+        },
+        {
+          eyebrow: "B2B E-commerce",
+          title: "3x more qualified demos from web",
+          body: "Deployed the widget on their public website focused on lead capture and qualification.",
+          metric: "3× pipeline",
+        },
+        {
+          eyebrow: "Internal portal",
+          title: "Knowledge indexed in 2 hours",
+          body: "A 50-person team moved from searching scattered docs to querying an assistant with the right context.",
+          metric: "2h → production",
+        },
+      ],
+    },
+    {
+      ...HOME_ES.sections[1],
       eyebrow: "What changes",
       title: "From accessory chat to an operational layer.",
       intro:
@@ -1033,7 +1223,7 @@ const HOME_EN: PublicPageDefinition = {
       ],
     },
     {
-      ...HOME_ES.sections[1],
+      ...HOME_ES.sections[2],
       eyebrow: "Platform",
       title: "Built for teams that blend marketing, product, support and operations.",
       intro:
@@ -1066,7 +1256,7 @@ const HOME_EN: PublicPageDefinition = {
       ],
     },
     {
-      ...HOME_ES.sections[2],
+      ...HOME_ES.sections[3],
       eyebrow: "Differentiation",
       title: "More serious than a marketing chatbot. Clearer than a generic AI platform.",
       intro:
@@ -1083,6 +1273,30 @@ const HOME_EN: PublicPageDefinition = {
           title: "A coherent conversational layer",
           body: "Demand capture, embeddable experience, knowledge, analytics and governance under one architecture.",
           bullets: ["Business-driven UX and copy", "Real technical control", "Ready for multiple products"],
+        },
+      ],
+    },
+    {
+      id: "pricing-teaser",
+      eyebrow: "Pricing",
+      title: "Clear from day one.",
+      intro: "No surprises, no eternal contracts. One plan per project, scalable when you need it.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "Starter",
+          title: "From €149/month",
+          body: "1 project, embedded widget, basic sources, 1k conversations/month.",
+        },
+        {
+          eyebrow: "Growth",
+          title: "From €399/month",
+          body: "5 projects, all sources, human handover, advanced analytics, API.",
+        },
+        {
+          eyebrow: "Enterprise",
+          title: "Custom",
+          body: "Full multi-tenant, whitelabeling, SLA and CRM integrations.",
         },
       ],
     },
@@ -1238,6 +1452,45 @@ const FEATURES_EN: PublicPageDefinition = {
         },
       ],
     },
+    {
+      ...FEATURES_ES.sections[3],
+      eyebrow: "LLM models",
+      title: "You choose the model. We provide the stack.",
+      intro: "OpenAI, Anthropic Claude, DeepSeek and Google Gemini available without changing the integration.",
+      cards: [
+        {
+          title: "Native multi-model support",
+          body: "Switch from GPT-4 to Claude to DeepSeek without touching your widget or knowledge base. A single selector in the cockpit.",
+        },
+        {
+          title: "Multimodal Gemini",
+          body: "Ingest video, audio, images and complex PDFs using Google Gemini. New gemini_file source type.",
+        },
+      ],
+    },
+    {
+      ...FEATURES_ES.sections[4],
+      eyebrow: "Ecosystem",
+      title: "Connect with what you already use.",
+      intro: "Webhooks, API keys, HubSpot, Zendesk, Notion, YouTube, Google Drive and more.",
+      cards: [
+        {
+          eyebrow: "Knowledge sources",
+          title: "Notion, YouTube, PDF, Sitemap",
+          body: "Ingest from the sources where your content already lives without migrations or duplicates.",
+        },
+        {
+          eyebrow: "CRM and support",
+          title: "HubSpot and Zendesk",
+          body: "Sync leads and tickets with your sales and support team tools.",
+        },
+        {
+          eyebrow: "Developer API",
+          title: "REST API + Webhooks",
+          body: "77+ documented endpoints, scoped API keys and HMAC-signed webhooks.",
+        },
+      ],
+    },
   ],
   timelineTitle: "Architecture ready to grow without rebuilding the whole stack.",
   timelineIntro:
@@ -1365,6 +1618,29 @@ const INTEGRATIONS_EN: PublicPageDefinition = {
         },
       ],
     },
+    {
+      ...INTEGRATIONS_ES.sections[3],
+      eyebrow: "For developers",
+      title: "REST API + Webhooks + Widget SDK.",
+      intro: "Build on Talkaris with clear documentation, scoped API keys and HMAC-signed webhooks.",
+      cards: [
+        {
+          eyebrow: "REST API",
+          title: "77+ documented endpoints",
+          body: "Manage projects, bots, knowledge and conversations from your infrastructure using Bearer auth.",
+        },
+        {
+          eyebrow: "Webhooks",
+          title: "Real-time event push",
+          body: "Receive conversation, lead and ingestion events with HMAC-signed payload for secure validation.",
+        },
+        {
+          eyebrow: "Widget SDK",
+          title: "Public postMessage API",
+          body: "Control the widget from the host page: open, close, send context and listen to events.",
+        },
+      ],
+    },
   ],
   ctaPanel: {
     eyebrow: "Fit",
@@ -1469,6 +1745,24 @@ const USE_CASES_EN: PublicPageDefinition = {
         {
           title: "Expansion to modules or higher plans",
           body: "When relevant, the assistant can also detect upsell or feature activation opportunities.",
+        },
+      ],
+    },
+    {
+      ...USE_CASES_ES.sections[3],
+      eyebrow: "Channels",
+      title: "The same bot, on your website and on Telegram.",
+      intro: "Connect your assistant to Telegram with a token. The same knowledge and conversational policy, on another channel.",
+      cards: [
+        {
+          title: "Telegram without additional code",
+          body: "Configure the Telegram channel from the cockpit with your bot token. Widget and Telegram share the same knowledge base and conversation flow.",
+          bullets: ["One token, active channel", "Same governed knowledge", "Conversations in the same console"],
+        },
+        {
+          title: "Multi-channel, single governance",
+          body: "Manage all channels from the same operations panel. Conversations, leads and analytics unified regardless of where the user came from.",
+          bullets: ["Web + Telegram + future integrations", "Unified analytics", "Scalable to more channels"],
         },
       ],
     },
@@ -1651,6 +1945,416 @@ const BLOG_EN: PublicPageDefinition = {
   },
 };
 
+const PRICING_ES: PublicPageDefinition = {
+  key: "pricing",
+  locale: "es",
+  path: "/precios",
+  navLabel: "Precios",
+  breadcrumbLabel: "Precios",
+  title: "Precios Talkaris",
+  description: "Planes de Talkaris para equipos B2B que quieren desplegar IA conversacional sin sorpresas ni contratos eternos.",
+  seoTitle: "Precios Talkaris | Plataforma IA conversacional",
+  seoDescription: "Consulta los precios de Talkaris: Starter desde 149€/mes, Growth desde 399€/mes y Enterprise a medida. Sin permanencia, sin sorpresas.",
+  seoKeywords: [
+    "precios chatbot ia",
+    "coste plataforma conversacional",
+    "precio chatbot empresa",
+    "cuánto cuesta chatbot ia",
+    "precio asistente virtual empresa",
+  ],
+  heroEyebrow: "Precios transparentes",
+  heroTitle: "Un precio por proyecto. Sin sorpresas.",
+  heroCopy: "Talkaris se estructura en planes claros para que sepas exactamente qué incluye cada nivel desde el primer día.",
+  heroSummary: "Sin contratos eternos, sin letra pequeña. Empieza con un proyecto y escala cuando tu operación lo requiera.",
+  heroBadges: ["Sin permanencia", "Sin costes ocultos", "Escalable"],
+  heroStats: [
+    { value: "149€", label: "Plan Starter desde", detail: "1 proyecto, widget, fuentes básicas y 1k conversaciones al mes." },
+    { value: "399€", label: "Plan Growth desde", detail: "Hasta 5 proyectos, todas las fuentes, handover humano y API." },
+    { value: "A medida", label: "Plan Enterprise", detail: "Multi-tenant completo, whitelabeling, SLA y onboarding dedicado." },
+  ],
+  heroImage: "/assets/talkaris-pricing-hero.png",
+  heroImageAlt: "Visual de precios transparentes de Talkaris",
+  primaryCtaLabel: "Solicitar demo",
+  primaryCtaPath: "/solicitar-demo",
+  secondaryCtaLabel: "Ver funcionalidades",
+  secondaryCtaPath: "/funcionalidades",
+  indexable: true,
+  leadInTitle: "Precios pensados para proyectos reales, no para capturar presupuesto.",
+  leadInBody: "Cada plan refleja un nivel de uso real. El objetivo es que empieces con lo que necesitas y crezcas sin cambiar de herramienta.",
+  leadInProofs: [
+    "Sin coste de setup ni permanencia mínima.",
+    "Cambio de plan en cualquier momento sin penalización.",
+    "Acceso completo a producción en 48h si hay fit.",
+  ],
+  sections: [
+    {
+      id: "plans",
+      eyebrow: "Planes",
+      title: "Elige el nivel que se adapta a tu operación.",
+      intro: "Tres planes con alcance diferenciado para que el coste siempre tenga sentido.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "Starter",
+          title: "Desde 149€/mes",
+          body: "Para equipos que quieren desplegar su primer asistente de IA de forma seria sin grandes compromisos.",
+          bullets: ["1 proyecto activo", "Widget embebido configurable", "Fuentes: Sitemap, HTML, PDF", "1.000 conversaciones/mes", "Hasta 5 usuarios", "Soporte por email"],
+        },
+        {
+          eyebrow: "Growth",
+          title: "Desde 399€/mes",
+          body: "Para equipos que operan varios productos o superficies y necesitan el stack completo.",
+          bullets: ["Hasta 5 proyectos activos", "Todas las fuentes: YouTube, Notion, Gemini File", "10.000 conversaciones/mes", "Hasta 20 usuarios", "Handover humano", "Analytics avanzado + Webhooks + API keys"],
+          metric: "Más popular",
+        },
+        {
+          eyebrow: "Enterprise",
+          title: "A medida",
+          body: "Para plataformas multi-tenant, agencias o empresas con requisitos de SLA, whitelabeling e integraciones CRM.",
+          bullets: ["Proyectos ilimitados", "Multi-tenant completo", "SLA garantizado", "Whitelabeling de widget", "Integraciones HubSpot y Zendesk", "Onboarding dedicado"],
+        },
+      ],
+    },
+    {
+      id: "faq-pricing",
+      eyebrow: "Preguntas sobre precios",
+      title: "Dudas habituales antes de decidir.",
+      intro: "Si tienes más preguntas, respóndelas en la demo.",
+      layout: "three-up",
+      cards: [
+        { title: "¿Hay permanencia mínima?", body: "No. Puedes cancelar en cualquier momento sin penalización. No cobramos setup ni onboarding en los planes Starter y Growth." },
+        { title: "¿Se puede cambiar de plan?", body: "Sí. El cambio de plan es inmediato y el ajuste de facturación se prorratea en el siguiente ciclo." },
+        { title: "¿Hay free trial?", body: "No ofrecemos trial genérico, pero sí demos orientadas a tu caso. Si hay fit técnico, puedes tener entorno de pruebas en 48h." },
+      ],
+    },
+  ],
+  timelineTitle: "Cómo empezar con Talkaris esta semana.",
+  timelineIntro: "El proceso está diseñado para que vayas de cero a producción sin sorpresas.",
+  timeline: [
+    { step: "01", title: "Solicita la demo", body: "Revisamos tu caso, la superficie y el nivel de operación que necesitas para recomendarte el plan correcto." },
+    { step: "02", title: "Acceso en 48h si hay fit", body: "Si hay encaje técnico y comercial, tienes entorno activo en menos de 48 horas." },
+    { step: "03", title: "Escala cuando lo necesites", body: "Cambia de plan sin fricción cuando el uso lo justifique. El conocimiento y la configuración se mantienen." },
+  ],
+  faqs: [
+    { question: "¿El precio incluye el widget y el cockpit?", answer: "Sí. El precio mensual incluye acceso al cockpit de operación, el widget embebible y las funcionalidades del plan contratado sin costes adicionales." },
+    { question: "¿Qué ocurre si supero el límite de conversaciones?", answer: "Te avisamos antes de llegar al límite. Puedes ampliar el plan o contratar conversaciones adicionales sin interrumpir el servicio." },
+    { question: "¿Los datos de mis conversaciones son privados?", answer: "Sí. El aislamiento multi-tenant garantiza que tus conversaciones, conocimiento y leads no son accesibles por otros tenants de la plataforma." },
+  ],
+  ctaPanel: {
+    eyebrow: "Siguiente paso",
+    title: "La mejor forma de entender el precio es verlo aplicado a tu caso.",
+    body: "Solicita la demo y en 30 minutos sabrás qué plan se ajusta a tu operación y cuánto tiempo tardarías en estar en producción.",
+    primaryLabel: "Solicitar demo",
+    primaryPath: "/solicitar-demo",
+    secondaryLabel: "Ver funcionalidades",
+    secondaryPath: "/funcionalidades",
+  },
+};
+
+const PRICING_EN: PublicPageDefinition = {
+  ...PRICING_ES,
+  locale: "en",
+  path: "/en/pricing",
+  navLabel: "Pricing",
+  breadcrumbLabel: "Pricing",
+  title: "Talkaris Pricing",
+  description: "Talkaris plans for B2B teams that want to deploy conversational AI without surprises or eternal contracts.",
+  seoTitle: "Talkaris Pricing | Conversational AI Platform",
+  seoDescription: "Talkaris pricing: Starter from €149/month, Growth from €399/month and Enterprise custom. No lock-in, no surprises.",
+  seoKeywords: ["ai chatbot pricing", "conversational platform cost", "enterprise chatbot price", "ai assistant cost", "chatbot saas pricing"],
+  heroEyebrow: "Transparent pricing",
+  heroTitle: "One price per project. No surprises.",
+  heroCopy: "Talkaris is structured in clear plans so you know exactly what each tier includes from day one.",
+  heroSummary: "No eternal contracts, no fine print. Start with one project and scale when your operation requires it.",
+  heroBadges: ["No lock-in", "No hidden costs", "Scalable"],
+  heroStats: [
+    { value: "€149", label: "Starter plan from", detail: "1 project, widget, basic sources and 1k conversations per month." },
+    { value: "€399", label: "Growth plan from", detail: "Up to 5 projects, all sources, human handover and API." },
+    { value: "Custom", label: "Enterprise plan", detail: "Full multi-tenant, whitelabeling, SLA and dedicated onboarding." },
+  ],
+  heroImageAlt: "Talkaris transparent pricing visual",
+  primaryCtaLabel: "Request demo",
+  primaryCtaPath: "/en/request-demo",
+  secondaryCtaLabel: "See features",
+  secondaryCtaPath: "/en/features",
+  leadInTitle: "Pricing designed for real projects, not budget capture.",
+  leadInBody: "Each plan reflects a real usage level. The goal is for you to start with what you need and grow without changing tools.",
+  leadInProofs: ["No setup cost or minimum commitment.", "Plan changes at any time without penalty.", "Full production access in 48h if there is fit."],
+  sections: [
+    {
+      id: "plans",
+      eyebrow: "Plans",
+      title: "Choose the level that fits your operation.",
+      intro: "Three plans with differentiated scope so the cost always makes sense.",
+      layout: "three-up",
+      cards: [
+        {
+          eyebrow: "Starter",
+          title: "From €149/month",
+          body: "For teams that want to deploy their first AI assistant seriously without big commitments.",
+          bullets: ["1 active project", "Configurable embedded widget", "Sources: Sitemap, HTML, PDF", "1,000 conversations/month", "Up to 5 users", "Email support"],
+        },
+        {
+          eyebrow: "Growth",
+          title: "From €399/month",
+          body: "For teams operating multiple products or surfaces that need the full stack.",
+          bullets: ["Up to 5 active projects", "All sources: YouTube, Notion, Gemini File", "10,000 conversations/month", "Up to 20 users", "Human handover", "Advanced analytics + Webhooks + API keys"],
+          metric: "Most popular",
+        },
+        {
+          eyebrow: "Enterprise",
+          title: "Custom",
+          body: "For multi-tenant platforms, agencies or companies with SLA, whitelabeling and CRM integration requirements.",
+          bullets: ["Unlimited projects", "Full multi-tenant", "Guaranteed SLA", "Widget whitelabeling", "HubSpot and Zendesk integrations", "Dedicated onboarding"],
+        },
+      ],
+    },
+    {
+      id: "faq-pricing",
+      eyebrow: "Pricing questions",
+      title: "Common questions before deciding.",
+      intro: "If you have more questions, answer them in the demo.",
+      layout: "three-up",
+      cards: [
+        { title: "Is there a minimum commitment?", body: "No. You can cancel at any time without penalty. We do not charge setup or onboarding fees on Starter and Growth plans." },
+        { title: "Can I change plans?", body: "Yes. Plan changes are immediate and billing adjustments are prorated in the next cycle." },
+        { title: "Is there a free trial?", body: "We do not offer a generic trial, but we do offer demos tailored to your case. If there is technical fit, you can have a test environment in 48h." },
+      ],
+    },
+  ],
+  timelineTitle: "How to get started with Talkaris this week.",
+  timelineIntro: "The process is designed to take you from zero to production without surprises.",
+  timeline: [
+    { step: "01", title: "Request the demo", body: "We review your case, the surface and the level of operation you need to recommend the right plan." },
+    { step: "02", title: "Access in 48h if there is fit", body: "If there is technical and commercial fit, you have an active environment in less than 48 hours." },
+    { step: "03", title: "Scale when you need it", body: "Change plans without friction when usage justifies it. Knowledge and configuration are preserved." },
+  ],
+  faqs: [
+    { question: "Does the price include the widget and the cockpit?", answer: "Yes. The monthly price includes access to the operations cockpit, the embeddable widget and the features of the contracted plan with no additional costs." },
+    { question: "What happens if I exceed the conversation limit?", answer: "We notify you before reaching the limit. You can upgrade the plan or purchase additional conversations without interrupting the service." },
+    { question: "Is my conversation data private?", answer: "Yes. Multi-tenant isolation ensures that your conversations, knowledge and leads are not accessible by other platform tenants." },
+  ],
+  ctaPanel: {
+    eyebrow: "Next step",
+    title: "The best way to understand pricing is to see it applied to your case.",
+    body: "Request the demo and in 30 minutes you will know which plan fits your operation and how long it would take to go live.",
+    primaryLabel: "Request demo",
+    primaryPath: "/en/request-demo",
+    secondaryLabel: "See features",
+    secondaryPath: "/en/features",
+  },
+};
+
+const CUSTOMERS_ES: PublicPageDefinition = {
+  key: "customers",
+  locale: "es",
+  path: "/clientes",
+  navLabel: "Clientes",
+  breadcrumbLabel: "Clientes",
+  title: "Clientes y casos de éxito de Talkaris",
+  description: "Equipos B2B que ya operan con Talkaris: SaaS, e-commerce B2B y portales internos que activaron IA conversacional en producción.",
+  seoTitle: "Clientes Talkaris | Casos de uso IA conversacional en producción",
+  seoDescription: "Descubre cómo empresas B2B usan Talkaris para activar asistentes IA en web, producto y soporte. Resultados reales, sin demos vacías.",
+  seoKeywords: ["casos de uso chatbot ia", "clientes plataforma ia conversacional", "resultados chatbot empresa", "ejemplos chatbot b2b", "casos exito asistente ia"],
+  heroEyebrow: "Casos reales",
+  heroTitle: "Equipos que ya operan con Talkaris.",
+  heroCopy: "De la web corporativa al portal interno. Empresas B2B que decidieron activar IA conversacional con criterio y sin improvisar.",
+  heroSummary: "Cada caso de uso refleja una decisión operativa concreta: qué superficie activar, qué conocimiento gobernar y qué resultado medir.",
+  heroBadges: ["SaaS", "E-commerce B2B", "Portales internos"],
+  heroStats: [
+    { value: "40%", label: "Reducción de tickets de soporte", detail: "SaaS de gestión que activó onboarding conversacional en su producto." },
+    { value: "3×", label: "Más demos cualificadas", detail: "E-commerce B2B que desplegó asistente en su web pública." },
+    { value: "2h", label: "Hasta knowledge base en producción", detail: "Portal interno que indexó su documentación completa en una tarde." },
+  ],
+  heroImage: "/assets/talkaris-customers-hero.png",
+  heroImageAlt: "Equipos de empresa usando Talkaris para operar asistentes IA",
+  primaryCtaLabel: "Solicitar demo",
+  primaryCtaPath: "/solicitar-demo",
+  secondaryCtaLabel: "Ver funcionalidades",
+  secondaryCtaPath: "/funcionalidades",
+  indexable: true,
+  leadInTitle: "IA conversacional que resuelve casos de uso reales.",
+  leadInBody: "No hay un único patrón de implantación. Hay equipos que empiezan por captación, otros por soporte y otros por documentación interna. Todos llegan a producción.",
+  leadInProofs: [
+    "Web corporativa: captación y calificación de demanda.",
+    "Producto SaaS: onboarding, ayuda contextual y upsell.",
+    "Portal interno: documentación accesible sin búsquedas manuales.",
+  ],
+  sections: [
+    {
+      id: "case-saas",
+      eyebrow: "SaaS de gestión",
+      title: "Onboarding conversacional que redujo tickets un 40%.",
+      intro: "Un SaaS de software de gestión activó Talkaris en su producto para guiar a nuevos usuarios durante el onboarding. El asistente responde dudas de configuración y detecta usuarios bloqueados antes de que escalen a soporte.",
+      layout: "two-up",
+      cards: [
+        { eyebrow: "Problema", title: "Demasiadas preguntas de configuración básica en soporte", body: "El volumen de tickets bloqueaba al equipo y ralentizaba la adopción de nuevos usuarios." },
+        { eyebrow: "Resultado", title: "−40% tickets en 30 días, NPS de onboarding mejorado", body: "El asistente resuelve el 80% de las preguntas frecuentes. El equipo de soporte se centra en casos complejos.", metric: "−40% tickets" },
+      ],
+    },
+    {
+      id: "case-ecommerce",
+      eyebrow: "E-commerce B2B",
+      title: "3x más demos cualificadas desde la web pública.",
+      intro: "Un e-commerce B2B desplegó el asistente de Talkaris en su web pública para calificar visitantes y orientarlos hacia la demo correcta según su perfil de compra.",
+      layout: "two-up",
+      cards: [
+        { eyebrow: "Problema", title: "Alta tasa de rebote sin conversión clara", body: "Los visitantes llegaban con preguntas pero no encontraban respuestas rápidas y se iban." },
+        { eyebrow: "Resultado", title: "3x más demos cualificadas por semana", body: "El asistente filtra intención de compra y ofrece CTA contextualizado al perfil del visitante.", metric: "3× pipeline" },
+      ],
+    },
+    {
+      id: "case-internal",
+      eyebrow: "Portal interno",
+      title: "Conocimiento de empresa indexado en 2 horas.",
+      intro: "Un equipo de 50 personas necesitaba acceder a documentación técnica y procesos internos sin depender de búsquedas manuales ni interrumpir a los expertos.",
+      layout: "two-up",
+      cards: [
+        { eyebrow: "Problema", title: "Documentación dispersa en Notion, PDFs y carpetas compartidas", body: "El conocimiento existía pero nadie lo encontraba. Las preguntas las respondían siempre los mismos expertos." },
+        { eyebrow: "Resultado", title: "Knowledge base unificado con respuesta instantánea", body: "Ingestión de fuentes Notion, PDF y sitemap interno en una tarde. El asistente responde en menos de 2 segundos.", metric: "2h → producción" },
+      ],
+    },
+    {
+      id: "industries",
+      eyebrow: "Sectores",
+      title: "Talkaris funciona donde hay conocimiento y conversación.",
+      intro: "No hay un sector exclusivo. Hay patrones de uso que se repiten en industrias distintas.",
+      layout: "three-up",
+      cards: [
+        { eyebrow: "SaaS", title: "Onboarding y soporte en producto", body: "Reduce tickets de configuración y mejora la adopción con asistencia contextual en el flujo del usuario." },
+        { eyebrow: "E-commerce B2B", title: "Captación y calificación en web", body: "Convierte visitas con intención en conversaciones cualificadas y demos orientadas al perfil del comprador." },
+        { eyebrow: "Consultoría", title: "Portales de cliente y documentación", body: "Centraliza el conocimiento de proyectos y procesos en un asistente accesible sin fricción para el equipo." },
+        { eyebrow: "EdTech", title: "Soporte al aprendizaje", body: "Responde dudas de contenido, navega el catálogo y acompaña al estudiante sin depender del tutor." },
+        { eyebrow: "Healthcare", title: "Información y derivación", body: "Ofrece información estructurada, filtra consultas y deriva a profesional cuando es necesario con trazabilidad." },
+        { eyebrow: "Legal y compliance", title: "Acceso a normativa interna", body: "El equipo consulta políticas, procedimientos y normativa sin interrumpir al departamento jurídico." },
+      ],
+    },
+  ],
+  timelineTitle: "El proceso para llegar a producción esta semana.",
+  timelineIntro: "Sin proyectos eternos ni integraciones complejas.",
+  timeline: [
+    { step: "01", title: "Demo orientada a tu caso", body: "Revisamos qué superficie activar, qué conocimiento tienes disponible y qué resultado quieres medir." },
+    { step: "02", title: "Configuración y snippet en 1 día", body: "Widget, knowledge base y política conversacional configurados. Un snippet para integrarlo en tu web o producto." },
+    { step: "03", title: "Operación y mejora continua", body: "Conversaciones, leads y analítica desde consola. Mejoras de conocimiento sin tocar código." },
+  ],
+  faqs: [
+    { question: "¿Los casos de uso son reales?", answer: "Son casos basados en patrones de implantación reales, representados con nombres ficticios para respetar la confidencialidad." },
+    { question: "¿Puedo ver una demo con mi caso de uso concreto?", answer: "Sí. La demo de Talkaris está orientada a tu superficie y objetivo real, no es una presentación genérica." },
+    { question: "¿Cuánto tiempo tarda una implantación real?", answer: "Entre 1 y 5 días dependiendo de la complejidad del conocimiento y la superficie. El widget en web se puede activar en horas." },
+  ],
+  ctaPanel: {
+    eyebrow: "¿Tu empresa es la siguiente?",
+    title: "¿Quieres ser el siguiente caso de éxito?",
+    body: "Solicita la demo y en 30 minutos evaluamos si Talkaris es el encaje correcto para tu web, producto o portal.",
+    primaryLabel: "Solicitar demo",
+    primaryPath: "/solicitar-demo",
+    secondaryLabel: "Ver precios",
+    secondaryPath: "/precios",
+  },
+};
+
+const CUSTOMERS_EN: PublicPageDefinition = {
+  ...CUSTOMERS_ES,
+  locale: "en",
+  path: "/en/customers",
+  navLabel: "Customers",
+  breadcrumbLabel: "Customers",
+  title: "Talkaris Customer Stories",
+  description: "B2B teams already running on Talkaris: SaaS, B2B e-commerce and internal portals that activated conversational AI in production.",
+  seoTitle: "Talkaris Customers | Conversational AI Use Cases in Production",
+  seoDescription: "Discover how B2B companies use Talkaris to activate AI assistants on web, product and support. Real results, no empty demos.",
+  seoKeywords: ["ai chatbot use cases", "conversational ai customers", "chatbot results enterprise", "b2b chatbot examples", "ai assistant success stories"],
+  heroEyebrow: "Real cases",
+  heroTitle: "Teams already running on Talkaris.",
+  heroCopy: "From corporate website to internal portal. B2B companies that activated conversational AI with intent and without improvising.",
+  heroSummary: "Each use case reflects a concrete operational decision: which surface to activate, which knowledge to govern and which result to measure.",
+  heroBadges: ["SaaS", "B2B E-commerce", "Internal portals"],
+  heroStats: [
+    { value: "40%", label: "Support ticket reduction", detail: "Management SaaS that activated conversational onboarding in their product." },
+    { value: "3×", label: "More qualified demos", detail: "B2B e-commerce that deployed an assistant on their public website." },
+    { value: "2h", label: "To knowledge base in production", detail: "Internal portal that indexed their complete documentation in an afternoon." },
+  ],
+  heroImageAlt: "Business teams using Talkaris to operate AI assistants",
+  primaryCtaLabel: "Request demo",
+  primaryCtaPath: "/en/request-demo",
+  secondaryCtaLabel: "See features",
+  secondaryCtaPath: "/en/features",
+  leadInTitle: "Conversational AI that solves real use cases.",
+  leadInBody: "There is no single deployment pattern. Some teams start with lead capture, others with support and others with internal documentation. All reach production.",
+  leadInProofs: ["Corporate website: lead capture and qualification.", "SaaS product: onboarding, contextual help and upsell.", "Internal portal: accessible documentation without manual searches."],
+  sections: [
+    {
+      id: "case-saas",
+      eyebrow: "Management SaaS",
+      title: "Conversational onboarding that reduced tickets by 40%.",
+      intro: "A management software SaaS activated Talkaris in their product to guide new users during onboarding. The assistant answers configuration questions and detects blocked users before they escalate to support.",
+      layout: "two-up",
+      cards: [
+        { eyebrow: "Problem", title: "Too many basic configuration questions in support", body: "The ticket volume blocked the team and slowed adoption of new users." },
+        { eyebrow: "Result", title: "−40% tickets in 30 days, improved onboarding NPS", body: "The assistant resolves 80% of frequent questions. The support team focuses on truly complex cases.", metric: "−40% tickets" },
+      ],
+    },
+    {
+      id: "case-ecommerce",
+      eyebrow: "B2B E-commerce",
+      title: "3x more qualified demos from the public website.",
+      intro: "A B2B e-commerce deployed the Talkaris assistant on their public website to qualify visitors and guide them to the right demo based on their buying profile.",
+      layout: "two-up",
+      cards: [
+        { eyebrow: "Problem", title: "High bounce rate without clear conversion", body: "Visitors arrived with questions but did not find quick answers and left." },
+        { eyebrow: "Result", title: "3x more qualified demos per week", body: "The assistant filters purchase intent and offers contextualized CTAs to the visitor profile.", metric: "3× pipeline" },
+      ],
+    },
+    {
+      id: "case-internal",
+      eyebrow: "Internal portal",
+      title: "Company knowledge indexed in 2 hours.",
+      intro: "A 50-person team needed to access technical documentation and internal processes without relying on manual searches or interrupting experts.",
+      layout: "two-up",
+      cards: [
+        { eyebrow: "Problem", title: "Documentation scattered across Notion, PDFs and shared folders", body: "The knowledge existed but nobody found it. Questions were always answered by the same experts." },
+        { eyebrow: "Result", title: "Unified knowledge base with instant answers", body: "Ingestion of Notion, PDF and internal sitemap sources in an afternoon. The assistant responds in under 2 seconds.", metric: "2h → production" },
+      ],
+    },
+    {
+      id: "industries",
+      eyebrow: "Industries",
+      title: "Talkaris works wherever there is knowledge and conversation.",
+      intro: "There is no exclusive sector. There are usage patterns that repeat across different industries.",
+      layout: "three-up",
+      cards: [
+        { eyebrow: "SaaS", title: "Onboarding and support in product", body: "Reduce configuration tickets and improve adoption with contextual assistance in the user flow." },
+        { eyebrow: "B2B E-commerce", title: "Lead capture and qualification on web", body: "Convert visits with intent into qualified conversations and demos oriented to the buyer's profile." },
+        { eyebrow: "Consulting", title: "Client portals and documentation", body: "Centralize project and process knowledge in a frictionless assistant for the team." },
+        { eyebrow: "EdTech", title: "Learning support", body: "Answer content questions, navigate the catalog and support the student without depending on the tutor." },
+        { eyebrow: "Healthcare", title: "Information and referral", body: "Provide structured information, filter queries and refer to a professional when necessary with full traceability." },
+        { eyebrow: "Legal and compliance", title: "Access to internal regulations", body: "The team queries policies, procedures and regulations without interrupting the legal department." },
+      ],
+    },
+  ],
+  timelineTitle: "The process to go live this week.",
+  timelineIntro: "No eternal projects or complex integrations.",
+  timeline: [
+    { step: "01", title: "Demo tailored to your case", body: "We review which surface to activate, what knowledge you have available and what result you want to measure." },
+    { step: "02", title: "Configuration and snippet in 1 day", body: "Widget, knowledge base and conversational policy configured. One snippet to integrate it in your web or product." },
+    { step: "03", title: "Operations and continuous improvement", body: "Conversations, leads and analytics from the console. Knowledge improvements without touching code." },
+  ],
+  faqs: [
+    { question: "Are the use cases real?", answer: "They are cases based on real deployment patterns, represented with fictitious names to respect customer confidentiality." },
+    { question: "Can I see a demo with my specific use case?", answer: "Yes. The Talkaris demo is tailored to your surface and real goal, not a generic presentation." },
+    { question: "How long does a real deployment take?", answer: "Between 1 and 5 days depending on the complexity of the knowledge and the surface. The widget on a website can be activated in hours." },
+  ],
+  ctaPanel: {
+    eyebrow: "Is your company next?",
+    title: "Want to be the next success story?",
+    body: "Request the demo and in 30 minutes we evaluate whether Talkaris is the right fit for your web, product or portal.",
+    primaryLabel: "Request demo",
+    primaryPath: "/en/request-demo",
+    secondaryLabel: "See pricing",
+    secondaryPath: "/en/pricing",
+  },
+};
+
 export const PUBLIC_PAGES: PublicPageDefinition[] = [
   HOME_ES,
   FEATURES_ES,
@@ -1658,12 +2362,16 @@ export const PUBLIC_PAGES: PublicPageDefinition[] = [
   USE_CASES_ES,
   FAQ_ES,
   BLOG_ES,
+  PRICING_ES,
+  CUSTOMERS_ES,
   HOME_EN,
   FEATURES_EN,
   INTEGRATIONS_EN,
   USE_CASES_EN,
   FAQ_EN,
   BLOG_EN,
+  PRICING_EN,
+  CUSTOMERS_EN,
 ];
 
 export function getPublicPageByPath(path: string): PublicPageDefinition | undefined {
