@@ -96,7 +96,13 @@ export interface Project {
     surfaceColor: string;
     textColor: string;
     launcherLabel: string;
+    logoUrl?: string;
+    removeBranding?: boolean;
+    proactiveMessage?: string;
+    proactiveDelaySeconds?: number;
   };
+  enableHandover?: boolean;
+  languageMode?: "fixed" | "auto";
 }
 
 export interface SourceItem {
@@ -214,4 +220,137 @@ export interface BlogPostSummary {
 
 export interface BlogPostDetail extends BlogPostSummary {
   bodyHtml: string;
+}
+
+// V1.5 models
+
+export interface WorkspaceMember {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  role: TenantRole;
+  status: "pending" | "active" | "disabled";
+  joinedAt: string;
+}
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyCreated extends ApiKey {
+  key: string;
+}
+
+export interface Webhook {
+  id: string;
+  url: string;
+  events: string[];
+  description: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface WebhookCreated extends Webhook {
+  secret: string;
+}
+
+export interface IngestionSchedule {
+  id: string;
+  name: string;
+  sourceIds: string[];
+  cronExpr: string;
+  active: boolean;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPrefs {
+  emailRecipients: string[];
+  leadCreated: boolean;
+  ingestionFailed: boolean;
+  lowConfidenceAlert: boolean;
+  lowConfidenceThreshold: number;
+  digestFrequency: "none" | "daily" | "weekly";
+}
+
+export interface SatisfactionStats {
+  avg: number;
+  total: number;
+  distribution: Record<string, number>;
+  recentComments: Array<{ score: number; comment: string | null; date: string }>;
+}
+
+export interface TestChatResponse {
+  message: string;
+  citations: Array<{ title: string; url: string; snippet: string }>;
+  confidence: number;
+  usedFallback: boolean;
+}
+
+export interface HandoverEvent {
+  id: string;
+  status: "pending" | "assigned" | "closed";
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface AiConfig {
+  provider?: "openai" | "anthropic" | "deepseek" | "google" | "local";
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  systemPromptAdditions?: string;
+}
+
+export interface HandoverQueueItem {
+  id: string;
+  status: "pending" | "assigned" | "closed";
+  reason: string | null;
+  createdAt: string;
+  claimedBy: string | null;
+  claimedAt: string | null;
+  resolvedAt: string | null;
+  notes: string | null;
+  sessionId: string;
+  projectKey: string;
+  botName: string;
+}
+
+export interface RagQualityStats {
+  period: string;
+  totalMessages: number;
+  fallbackRate: number;
+  avgConfidence: number | null;
+  lowConfidenceCount: number;
+  coverageScore: number | null;
+  topGaps: Array<{ question: string; count: number }>;
+}
+
+export interface AnalyticsTrends {
+  period: string;
+  resolutionRate: number | null;
+  handoverRate: number | null;
+  avgMessagesPerConversation: number | null;
+  avgConversationDurationMinutes: number | null;
+  dailySeries: Array<{
+    date: string;
+    messages: number;
+    resolved: number;
+    handovers: number;
+  }>;
+}
+
+export interface ChannelItem {
+  id: string;
+  kind: "telegram" | "whatsapp";
+  status: "active" | "paused";
+  has_token: boolean;
+  created_at: string;
 }

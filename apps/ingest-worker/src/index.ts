@@ -3,11 +3,17 @@ import { setTimeout as delay } from "node:timers/promises";
 import { Pool, PoolClient } from "pg";
 import { inferLanguage, normalizeDocumentText, splitIntoSemanticChunks } from "@tecnoria-chat/core";
 import { z } from "zod";
+import { YoutubeTranscript } from "youtube-transcript";
+import { Client as NotionClient } from "@notionhq/client";
+import type { BlockObjectResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints.js";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   FETCH_TIMEOUT_MS: z.coerce.number().default(15000),
   CRAWLER_USER_AGENT: z.string().default("TalkarisIngest/0.1 (+https://talkaris.com)"),
+  YOUTUBE_API_KEY: z.string().optional(),
+  NOTION_TOKEN: z.string().optional(),
+  GOOGLE_AI_API_KEY: z.string().optional(),
 });
 
 const env = envSchema.parse(process.env);
@@ -18,7 +24,7 @@ interface JobRow {
   project_id: string;
   source_id: string;
   source_key: string;
-  kind: "sitemap" | "html" | "pdf" | "markdown";
+  kind: "sitemap" | "html" | "pdf" | "markdown" | "api_endpoint" | "youtube" | "notion" | "gemini_file";
   entry_url: string;
   include_patterns: string[];
   exclude_patterns: string[];
@@ -26,6 +32,7 @@ interface JobRow {
   project_domains: string[];
   visibility: "public" | "private";
   default_category: string | null;
+  source_config: Record<string, unknown>;
 }
 
 interface ExtractedDocument {
@@ -210,6 +217,7 @@ async function claimNextJob(): Promise<JobRow | null> {
           s.allowed_domains AS source_domains,
           s.visibility,
           s.default_category,
+          s.source_config,
           p.allowed_domains AS project_domains
         FROM ingestion_jobs j
         INNER JOIN sources s ON s.id = j.source_id
@@ -375,6 +383,325 @@ async function finishJob(jobId: string, status: "done" | "failed", summary: Reco
   );
 }
 
+// ── youtube handler ───────────────────────────────────────────────────────────
+
+function extractYouTubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1).split("?")[0] || null;
+    return u.searchParams.get("v");
+  } catch {
+    return null;
+  }
+}
+
+function extractYouTubePlaylistId(url: string): string | null {
+  try {
+    return new URL(url).searchParams.get("list");
+  } catch {
+    return null;
+  }
+}
+
+async function listPlaylistVideoIds(playlistId: string): Promise<string[]> {
+  const apiKey = env.YOUTUBE_API_KEY;
+  if (!apiKey) return [];
+  const ids: string[] = [];
+  let pageToken: string | undefined;
+  do {
+    const params = new URLSearchParams({
+      part: "snippet",
+      playlistId,
+      maxResults: "50",
+      key: apiKey,
+      ...(pageToken ? { pageToken } : {}),
+    });
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?${params}`, {
+      signal: AbortSignal.timeout(env.FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) break;
+    const data = (await res.json()) as { items: Array<{ snippet: { resourceId: { videoId: string } } }>; nextPageToken?: string };
+    for (const item of data.items ?? []) {
+      const vid = item.snippet?.resourceId?.videoId;
+      if (vid) ids.push(vid);
+    }
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+  return ids;
+}
+
+async function fetchYouTube(job: JobRow): Promise<ExtractedDocument[]> {
+  const cfg = job.source_config ?? {};
+  const lang = (cfg["lang"] as string) ?? "es";
+  const customTitle = cfg["title"] as string | undefined;
+
+  // Collect video IDs
+  const videoIds: string[] = [];
+  const playlistId = extractYouTubePlaylistId(job.entry_url);
+  const directId = extractYouTubeVideoId(job.entry_url);
+
+  if (playlistId) {
+    const fromPlaylist = await listPlaylistVideoIds(playlistId);
+    videoIds.push(...fromPlaylist);
+    // Also add the video in the URL if present
+    if (directId && !videoIds.includes(directId)) videoIds.push(directId);
+  } else if (directId) {
+    videoIds.push(directId);
+  } else {
+    throw new Error(`Cannot extract video or playlist ID from URL: ${job.entry_url}`);
+  }
+
+  const docs: ExtractedDocument[] = [];
+
+  for (const videoId of videoIds) {
+    try {
+      const segments = await YoutubeTranscript.fetchTranscript(videoId, { lang });
+      if (!segments.length) continue;
+      const rawText = segments.map((s) => s.text).join(" ").replace(/\s+/g, " ").trim();
+      const normalized = normalizeDocumentText(rawText);
+      if (!normalized.trim()) continue;
+
+      const title = customTitle ?? `YouTube video ${videoId}`;
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+      docs.push({
+        canonicalUrl: videoUrl,
+        title,
+        h1: title,
+        language: inferLanguage(normalized, lang),
+        text: normalized,
+        docType: "youtube",
+        sectionPath: [title],
+        category: job.default_category,
+        metadata: { title, videoId, sourceKey: job.source_key },
+        rawChecksum: hashText(normalized),
+        etag: null,
+        lastModified: null,
+      });
+    } catch {
+      // Skip videos without transcripts (private, restricted, etc.)
+    }
+  }
+
+  return docs;
+}
+
+// ── notion handler ────────────────────────────────────────────────────────────
+
+function extractNotionId(urlOrId: string): string {
+  // Strip hyphens and extract 32-char hex ID from URL or plain ID
+  const raw = urlOrId.split("?")[0].split("#")[0];
+  const last = raw.split("/").pop() ?? raw;
+  const cleaned = last.replace(/-/g, "").slice(-32);
+  // Re-insert hyphens: 8-4-4-4-12
+  if (cleaned.length === 32) {
+    return `${cleaned.slice(0,8)}-${cleaned.slice(8,12)}-${cleaned.slice(12,16)}-${cleaned.slice(16,20)}-${cleaned.slice(20)}`;
+  }
+  return urlOrId;
+}
+
+function richTextToString(richText: RichTextItemResponse[]): string {
+  return richText.map((rt) => rt.plain_text).join("");
+}
+
+function blocksToText(blocks: BlockObjectResponse[]): string {
+  const lines: string[] = [];
+  for (const block of blocks) {
+    const type = block.type;
+    const b = block as Record<string, unknown>;
+    const content = b[type] as Record<string, unknown> | undefined;
+    const rt = content?.["rich_text"] as RichTextItemResponse[] | undefined;
+    const text = rt ? richTextToString(rt) : "";
+    if (text.trim()) lines.push(text);
+  }
+  return lines.join("\n");
+}
+
+async function fetchNotion(job: JobRow): Promise<ExtractedDocument[]> {
+  const cfg = job.source_config ?? {};
+  const token = (cfg["token"] as string) ?? env.NOTION_TOKEN;
+  if (!token) throw new Error("Notion integration token required in source_config.token");
+
+  const notion = new NotionClient({ auth: token });
+  const notionId = extractNotionId(job.entry_url);
+  const docs: ExtractedDocument[] = [];
+
+  // Try as data source (database) first, then as page
+  let pageIds: string[] = [];
+  try {
+    const dbResult = await notion.dataSources.query({ data_source_id: notionId, page_size: 100 });
+    pageIds = dbResult.results.map((r: { id: string }) => r.id);
+  } catch {
+    // Not a database — treat as single page
+    pageIds = [notionId];
+  }
+
+  for (const pageId of pageIds) {
+    try {
+      const page = await notion.pages.retrieve({ page_id: pageId });
+      const blocksResult = await notion.blocks.children.list({ block_id: pageId, page_size: 100 });
+      const rawText = blocksToText(blocksResult.results as BlockObjectResponse[]);
+      const normalized = normalizeDocumentText(rawText);
+      if (!normalized.trim()) continue;
+
+      // Extract page title from properties
+      const props = (page as Record<string, unknown>)["properties"] as Record<string, unknown> | undefined;
+      const titleProp = props?.["Name"] ?? props?.["title"] ?? props?.["Title"];
+      const titleRt = (titleProp as Record<string, unknown> | undefined)?.["title"] as RichTextItemResponse[] | undefined;
+      const title = titleRt ? richTextToString(titleRt) : pageId;
+      const pageUrl = `https://www.notion.so/${pageId.replace(/-/g, "")}`;
+
+      docs.push({
+        canonicalUrl: pageUrl,
+        title,
+        h1: title,
+        language: inferLanguage(normalized, "es"),
+        text: normalized,
+        docType: "notion",
+        sectionPath: [title],
+        category: job.default_category,
+        metadata: { title, pageId, sourceKey: job.source_key },
+        rawChecksum: hashText(normalized),
+        etag: null,
+        lastModified: null,
+      });
+    } catch {
+      // Skip inaccessible pages
+    }
+  }
+
+  return docs;
+}
+
+// ── api_endpoint handler ──────────────────────────────────────────────────────
+
+async function fetchApiEndpoint(job: JobRow): Promise<ExtractedDocument[]> {
+  const cfg = job.source_config ?? {};
+  const customHeaders: Record<string, string> = (cfg["headers"] as Record<string, string>) ?? {};
+  const method = ((cfg["method"] as string) ?? "GET").toUpperCase();
+  const body = cfg["body"] ? JSON.stringify(cfg["body"]) : undefined;
+  const contentPath = cfg["contentPath"] as string | undefined; // e.g. "data.items"
+
+  const response = await fetch(job.entry_url, {
+    method,
+    headers: {
+      "User-Agent": env.CRAWLER_USER_AGENT,
+      "Accept": "application/json, text/plain, */*",
+      ...customHeaders,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body,
+    signal: AbortSignal.timeout(env.FETCH_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API endpoint returned ${response.status}: ${job.entry_url}`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const rawText = await response.text();
+
+  let textContent: string;
+  if (contentType.includes("application/json") || rawText.trimStart().startsWith("{") || rawText.trimStart().startsWith("[")) {
+    try {
+      let data = JSON.parse(rawText);
+      // Optionally navigate a nested path like "data.items"
+      if (contentPath) {
+        for (const key of contentPath.split(".")) {
+          data = data?.[key];
+        }
+      }
+      // Flatten to text: if array of objects, join their string values; else JSON.stringify
+      if (Array.isArray(data)) {
+        textContent = data.map((item: unknown) =>
+          typeof item === "string" ? item : Object.values(item as Record<string, unknown>).filter(v => typeof v === "string").join("\n")
+        ).join("\n\n");
+      } else if (typeof data === "string") {
+        textContent = data;
+      } else {
+        textContent = JSON.stringify(data, null, 2);
+      }
+    } catch {
+      textContent = rawText;
+    }
+  } else {
+    textContent = rawText;
+  }
+
+  const normalized = normalizeDocumentText(textContent);
+  if (!normalized.trim()) return [];
+
+  const title = (cfg["title"] as string) ?? job.source_key;
+  const checksum = hashText(normalized);
+
+  return [{
+    canonicalUrl: job.entry_url,
+    title,
+    h1: title,
+    language: inferLanguage(normalized, "es"),
+    text: normalized,
+    docType: "api_endpoint",
+    sectionPath: [title],
+    category: job.default_category,
+    metadata: { title, sourceKey: job.source_key },
+    rawChecksum: checksum,
+    etag: null,
+    lastModified: null,
+  }];
+}
+
+async function fetchGeminiFile(job: JobRow): Promise<ExtractedDocument[]> {
+  if (!env.GOOGLE_AI_API_KEY) throw new Error("GOOGLE_AI_API_KEY not configured");
+
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const genAI = new GoogleGenerativeAI(env.GOOGLE_AI_API_KEY);
+  const gemini = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const cfg = job.source_config as {
+    mediaType?: string;
+    prompt?: string;
+    title?: string;
+  };
+
+  const extractionPrompt = cfg.prompt ??
+    "Extrae todo el contenido informativo de este archivo. Devuelve texto estructurado con secciones y puntos clave en el idioma original del contenido.";
+
+  // Fetch the raw file bytes
+  const resp = await fetch(job.entry_url, { signal: AbortSignal.timeout(120_000) });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} fetching ${job.entry_url}`);
+
+  const buffer = await resp.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString("base64");
+  const mimeType = (cfg.mediaType ?? resp.headers.get("content-type") ?? "application/octet-stream") as string;
+
+  const result = await gemini.generateContent([
+    extractionPrompt,
+    { inlineData: { data: base64, mimeType } },
+  ]);
+
+  const text = result.response.text()?.trim();
+  if (!text) return [];
+
+  const title = cfg.title ?? job.entry_url.split("/").pop() ?? job.source_key;
+  const checksum = hashText(text);
+  const docType = mimeType.split("/")[0] ?? "media";
+
+  return [{
+    canonicalUrl: job.entry_url,
+    title,
+    h1: title,
+    language: inferLanguage(text, "es"),
+    text,
+    docType,
+    sectionPath: [title],
+    category: job.default_category,
+    metadata: { mimeType, source: "gemini_file", sourceKey: job.source_key },
+    rawChecksum: checksum,
+    etag: null,
+    lastModified: null,
+  }];
+}
+
 async function processJob(job: JobRow): Promise<void> {
   const summary: {
     discovered: number;
@@ -391,6 +718,78 @@ async function processJob(job: JobRow): Promise<void> {
   };
 
   try {
+    // notion: fetch pages from database or single page
+    if (job.kind === "notion") {
+      const client = await pool.connect();
+      try {
+        const docs = await fetchNotion(job);
+        summary.discovered = docs.length;
+        summary.fetched = docs.length;
+        for (const doc of docs) {
+          const result = await upsertDocument(client, job, doc);
+          summary[result] += 1;
+        }
+      } finally {
+        client.release();
+      }
+      await finishJob(job.id, "done", summary);
+      return;
+    }
+
+    // youtube: fetch transcripts and index as documents
+    if (job.kind === "youtube") {
+      const client = await pool.connect();
+      try {
+        const docs = await fetchYouTube(job);
+        summary.discovered = docs.length;
+        summary.fetched = docs.length;
+        for (const doc of docs) {
+          const result = await upsertDocument(client, job, doc);
+          summary[result] += 1;
+        }
+      } finally {
+        client.release();
+      }
+      await finishJob(job.id, "done", summary);
+      return;
+    }
+
+    // gemini_file: send media file to Gemini for multimodal extraction
+    if (job.kind === "gemini_file") {
+      const client = await pool.connect();
+      try {
+        const docs = await fetchGeminiFile(job);
+        summary.discovered = docs.length;
+        summary.fetched = docs.length;
+        for (const doc of docs) {
+          const result = await upsertDocument(client, job, doc);
+          summary[result] += 1;
+        }
+      } finally {
+        client.release();
+      }
+      await finishJob(job.id, "done", summary);
+      return;
+    }
+
+    // api_endpoint: fetch once and index the response as a single document
+    if (job.kind === "api_endpoint") {
+      const client = await pool.connect();
+      try {
+        const docs = await fetchApiEndpoint(job);
+        summary.discovered = docs.length;
+        summary.fetched = docs.length;
+        for (const doc of docs) {
+          const result = await upsertDocument(client, job, doc);
+          summary[result] += 1;
+        }
+      } finally {
+        client.release();
+      }
+      await finishJob(job.id, "done", summary);
+      return;
+    }
+
     const urls = await discoverUrls(job);
     summary.discovered = urls.length;
 

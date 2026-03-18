@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- HOME -->
+  <url>
+    <loc>https://talkaris.com/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://talkaris.com/"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://talkaris.com/en</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- FEATURES / FUNCIONALIDADES -->
+  <url>
+    <loc>https://talkaris.com/funcionalidades</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/funcionalidades"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/features"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://talkaris.com/en/features</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/funcionalidades"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/features"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- INTEGRATIONS / INTEGRACIONES -->
+  <url>
+    <loc>https://talkaris.com/integraciones</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/integraciones"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/integrations"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://talkaris.com/en/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/integraciones"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/integrations"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- USE CASES / CASOS DE USO -->
+  <url>
+    <loc>https://talkaris.com/casos-de-uso</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/casos-de-uso"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/use-cases"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://talkaris.com/en/use-cases</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/casos-de-uso"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/use-cases"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- FAQ -->
+  <url>
+    <loc>https://talkaris.com/faq</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/faq"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/faq"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://talkaris.com/en/faq</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://talkaris.com/faq"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://talkaris.com/en/faq"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- BLOG -->
+  <url>
+    <loc>https://talkaris.com/blog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://talkaris.com/en/blog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+</urlset>

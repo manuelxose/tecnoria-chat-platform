@@ -35,6 +35,17 @@ export interface ProjectRecord {
   ctaConfig: CTAConfig;
   widgetTheme: WidgetTheme;
   leadSink: LeadSinkConfig;
+  enableHandover?: boolean;
+  aiConfig?: AiConfig;
+  languageMode?: "fixed" | "auto";
+}
+
+export interface AiConfig {
+  provider?: "openai" | "anthropic" | "deepseek" | "google" | "local";
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  systemPromptAdditions?: string;
 }
 
 export interface PromptPolicy {
@@ -57,6 +68,10 @@ export interface WidgetTheme {
   surfaceColor: string;
   textColor: string;
   launcherLabel: string;
+  logoUrl?: string;
+  removeBranding?: boolean;
+  proactiveMessage?: string;
+  proactiveDelaySeconds?: number;
 }
 
 export interface LeadSinkConfig {

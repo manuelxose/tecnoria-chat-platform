@@ -63,6 +63,27 @@
         display: none !important;
       }
 
+      .proactive-tip {
+        position: absolute;
+        bottom: 108px;
+        right: 0;
+        background: #fff;
+        color: #021310;
+        border-radius: 12px 12px 2px 12px;
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        max-width: 200px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        line-height: 1.4;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
       .header {
         padding: 18px 18px 14px;
         background: linear-gradient(180deg, var(--surface), var(--surface-soft));
@@ -193,6 +214,11 @@
         flex: 1;
       }
 
+      #handover-btn.handover--sent {
+        opacity: 0.55;
+        cursor: default;
+      }
+
       .form {
         padding: 0 16px 16px;
         display: flex;
@@ -271,6 +297,7 @@
   </head>
   <body>
     <div class="shell">
+      <div id="proactive-tip" class="proactive-tip hidden"></div>
       <button id="launcher" class="launcher" type="button">Chat</button>
       <section id="widget" class="widget hidden" aria-live="polite">
         <header class="header">
@@ -291,6 +318,7 @@
             <div class="lead-card__actions">
               <a id="primary-cta" href="/solicitar-demo" target="_top" rel="noopener">Solicitar demo</a>
               <button id="show-form" type="button">Dejar datos</button>
+              <button id="handover-btn" type="button" class="hidden">Hablar con persona</button>
             </div>
           </div>
           <form id="lead-form" class="form hidden">
@@ -325,7 +353,7 @@
       const isMarketingEn = entryContext === "marketing-en";
       const isMarketingEs = entryContext === "marketing-es";
       const isMarketingContext = isMarketingEn || isMarketingEs || entryContext === "auctorio-marketing";
-      const fallbackContactUrl = contactUrl
+      let fallbackContactUrl = contactUrl
         || "https://talkaris.com/solicitar-demo";
       const defaultBotCopy = isMarketingEn
         ? "Assistant for the platform, integrations and commercial contact."
@@ -376,6 +404,7 @@
       const leadCard = document.getElementById("lead-card");
       const primaryCta = document.getElementById("primary-cta");
       const showFormButton = document.getElementById("show-form");
+      const handoverBtn = document.getElementById("handover-btn");
       const leadForm = document.getElementById("lead-form");
       const botName = document.getElementById("bot-name");
       const botCopy = document.getElementById("bot-copy");
@@ -495,6 +524,7 @@
         const text = await postJson("/v1/widget/sessions", {
           siteKey,
           origin: parentOrigin,
+          detectedLanguage: (navigator.language || "").slice(0, 2) || null,
         });
         const data = text ? JSON.parse(text) : null;
         conversationId = data?.conversationId || null;
@@ -670,6 +700,49 @@
         primaryCta.addEventListener("click", () => {
           logEvent("cta_clicked", { url: primaryCta.href });
         });
+        if (config.enableHandover) {
+          handoverBtn.classList.remove("hidden");
+          handoverBtn.addEventListener("click", requestHandover);
+        }
+        // V2-H: Whitelabeling
+        if (config.theme?.logoUrl) {
+          const img = document.createElement("img");
+          img.src = config.theme.logoUrl;
+          img.alt = "Logo";
+          img.style.cssText = "height:26px;width:auto;object-fit:contain;border-radius:4px;";
+          botName.parentElement.insertBefore(img, botName);
+        }
+        if (config.theme?.removeBranding) {
+          fallbackContactUrl = config.cta?.primaryUrl || "#";
+        }
+
+        // Proactive bubble
+        const proactiveTip = document.getElementById("proactive-tip");
+        if (config.theme?.proactiveMessage && proactiveTip && !expanded) {
+          const delay = (config.theme.proactiveDelaySeconds ?? 8) * 1000;
+          setTimeout(() => {
+            if (!expanded) {
+              proactiveTip.textContent = config.theme.proactiveMessage;
+              proactiveTip.classList.remove("hidden");
+              setTimeout(() => proactiveTip.classList.add("hidden"), 8000);
+            }
+          }, delay);
+        }
+      }
+
+      async function requestHandover() {
+        await ensureSession();
+        handoverBtn.disabled = true;
+        handoverBtn.textContent = "Enviando\u2026";
+        try {
+          await postJson("/v1/widget/handover", { siteKey, conversationId, reason: "user_requested" });
+          handoverBtn.textContent = "Solicitud enviada \u2713";
+          handoverBtn.classList.add("handover--sent");
+          addBubble("bot", "Hemos avisado al equipo. Se pondr\u00e1n en contacto contigo pronto.");
+        } catch {
+          handoverBtn.disabled = false;
+          handoverBtn.textContent = "Hablar con persona";
+        }
       }
 
       launcher.addEventListener("click", async () => {

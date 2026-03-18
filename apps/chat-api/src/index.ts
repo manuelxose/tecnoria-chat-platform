@@ -9,6 +9,7 @@ import nodemailer from "nodemailer";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import {
+  AiConfig,
   buildFallbackAnswer,
   CTAConfig,
   ChatAnswer,
@@ -96,6 +97,11 @@ const envSchema = z.object({
   AUCTORIO_PUBLISHER_TOKEN: z.string().default(""),
   BLOG_REINGEST_PROJECT_KEY: z.string().default("talkaris"),
   BLOG_REINGEST_SOURCE_KEY: z.string().default("public-site"),
+  OPENAI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  DEEPSEEK_API_KEY: z.string().optional(),
+  GOOGLE_AI_API_KEY: z.string().optional(),
+  TELEGRAM_WEBHOOK_SECRET: z.string().default("talkaris-tg-secret"),
 });
 
 const env = envSchema.parse(process.env);
@@ -191,18 +197,20 @@ const createProjectSchema = z.object({
   status: z.enum(["active", "draft", "disabled"]).default("active"),
   publicBaseUrl: z.string().url().optional(),
   metadata: z.record(z.any()).default({}),
+  languageMode: z.enum(["fixed", "auto"]).default("fixed"),
 });
 
 const sourceSchema = z.object({
   projectKey: z.string().min(2),
   sourceKey: z.string().min(2),
-  kind: z.enum(["sitemap", "html", "pdf", "markdown"]),
+  kind: z.enum(["sitemap", "html", "pdf", "markdown", "api_endpoint", "youtube", "notion", "gemini_file"]),
   entryUrl: z.string().url(),
   includePatterns: z.array(z.string()).default([]),
   excludePatterns: z.array(z.string()).default([]),
   allowedDomains: z.array(z.string()).default([]),
   visibility: z.enum(["public", "private"]).default("public"),
   defaultCategory: z.string().optional(),
+  sourceConfig: z.record(z.unknown()).optional(),
 });
 
 const ingestionSchema = z.object({
@@ -214,6 +222,7 @@ const ingestionSchema = z.object({
 const sessionSchema = z.object({
   siteKey: z.string().min(6),
   origin: z.string().optional(),
+  detectedLanguage: z.string().max(10).optional(),
 });
 
 const messageSchema = z.object({
@@ -423,6 +432,9 @@ function normalizeProject(row: DbRow): ProjectRecord {
       webhookUrl: row.lead_sink?.webhookUrl ?? env.DEFAULT_LEAD_WEBHOOK_URL,
       secretHeaderName: row.lead_sink?.secretHeaderName ?? "x-talkaris-chat-secret",
     },
+    enableHandover: row.enable_handover ?? false,
+    aiConfig: row.ai_config ?? {},
+    languageMode: ((row.language_mode as string | undefined) === "auto" ? "auto" : "fixed") as "fixed" | "auto",
   };
 }
 
@@ -843,10 +855,22 @@ function hashOpaqueToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function composeAnswer(project: ProjectRecord, userMessage: string, chunks: RetrievedChunk[]): ChatAnswer {
+const answerI18n: Record<string, { found: string; cta: string }> = {
+  es: { found: "He encontrado informaci\u00f3n relevante.", cta: "Puedo orientarte al siguiente paso." },
+  en: { found: "I found relevant information.", cta: "I can guide you to the next step." },
+  fr: { found: "J\u2019ai trouv\u00e9 des informations pertinentes.", cta: "Je peux vous orienter vers la prochaine \u00e9tape." },
+  pt: { found: "Encontrei informa\u00e7\u00f5es relevantes.", cta: "Posso orient\u00e1-lo para o pr\u00f3ximo passo." },
+  de: { found: "Ich habe relevante Informationen gefunden.", cta: "Ich kann Sie zum n\u00e4chsten Schritt f\u00fchren." },
+  ca: { found: "He trobat informaci\u00f3 rellevant.", cta: "Puc orientar-te al proper pas." },
+  it: { found: "Ho trovato informazioni rilevanti.", cta: "Posso guidarti al passo successivo." },
+};
+
+function composeAnswer(project: ProjectRecord, userMessage: string, chunks: RetrievedChunk[], lang?: string): ChatAnswer {
   if (!chunks.length || Number(chunks[0].score) < 0.005) {
     return buildFallbackAnswer(project);
   }
+
+  const t = answerI18n[(lang ?? project.language ?? "es").slice(0, 2)] ?? answerI18n["es"];
 
   const topChunks = selectTopChunks(chunks.map((chunk: RetrievedChunk) => ({ ...chunk, score: Number(chunk.score) })), 4);
   const uniqueParagraphs: string[] = [];
@@ -862,9 +886,9 @@ function composeAnswer(project: ProjectRecord, userMessage: string, chunks: Retr
 
   const commercialIntent = scoreCommercialIntent(userMessage, project.ctaConfig.salesKeywords);
   const message = [
-    uniqueParagraphs[0] ?? "He encontrado informacion relevante en el conocimiento autorizado.",
+    uniqueParagraphs[0] ?? t.found,
     uniqueParagraphs.slice(1).join(" "),
-    commercialIntent > 0 ? "Si quieres, puedo orientarte al siguiente paso comercial adecuado." : "",
+    commercialIntent > 0 ? t.cta : "",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -887,6 +911,83 @@ function composeAnswer(project: ProjectRecord, userMessage: string, chunks: Retr
     confidence: Math.min(0.95, 0.45 + Number(topChunks[0].score)),
     usedFallback: false,
   };
+}
+
+async function callLlm(
+  project: ProjectRecord,
+  userMessage: string,
+  chunks: RetrievedChunk[],
+  lang: string
+): Promise<string | null> {
+  const cfg = project.aiConfig as AiConfig | undefined;
+  if (!cfg?.provider || !cfg?.model) return null;
+
+  const context = chunks.slice(0, 4).map(c => `[${c.title}]\n${c.body}`).join("\n\n---\n\n");
+  const systemPrompt = [
+    `Eres un asistente de soporte. Responde siempre en el idioma: ${lang}.`,
+    `Usa únicamente la información del contexto proporcionado. Si no encuentras la respuesta en el contexto, indícalo claramente.`,
+    cfg.systemPromptAdditions ?? "",
+  ].filter(Boolean).join("\n");
+
+  if (cfg.provider === "openai") {
+    if (!env.OPENAI_API_KEY) return null;
+    const { OpenAI } = await import("openai");
+    const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    const resp = await client.chat.completions.create({
+      model: cfg.model,
+      temperature: cfg.temperature ?? 0.3,
+      max_tokens: cfg.maxTokens ?? 512,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Contexto:\n${context}\n\nPregunta: ${userMessage}` },
+      ],
+    });
+    return resp.choices[0]?.message?.content ?? null;
+  }
+
+  if (cfg.provider === "anthropic") {
+    if (!env.ANTHROPIC_API_KEY) return null;
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    const resp = await client.messages.create({
+      model: cfg.model,
+      max_tokens: cfg.maxTokens ?? 512,
+      system: systemPrompt,
+      messages: [{ role: "user", content: `Contexto:\n${context}\n\nPregunta: ${userMessage}` }],
+    });
+    return (resp.content[0] as { type: "text"; text: string }).text ?? null;
+  }
+
+  if (cfg.provider === "deepseek") {
+    if (!env.DEEPSEEK_API_KEY) return null;
+    const { OpenAI } = await import("openai");
+    const client = new OpenAI({
+      apiKey: env.DEEPSEEK_API_KEY,
+      baseURL: "https://api.deepseek.com",
+    });
+    const resp = await client.chat.completions.create({
+      model: cfg.model,
+      temperature: cfg.temperature ?? 0.3,
+      max_tokens: cfg.maxTokens ?? 512,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Contexto:\n${context}\n\nPregunta: ${userMessage}` },
+      ],
+    });
+    return resp.choices[0]?.message?.content ?? null;
+  }
+
+  if (cfg.provider === "google") {
+    if (!env.GOOGLE_AI_API_KEY) return null;
+    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+    const genAI = new GoogleGenerativeAI(env.GOOGLE_AI_API_KEY);
+    const gemini = genAI.getGenerativeModel({ model: cfg.model });
+    const prompt = `${systemPrompt}\n\nContexto:\n${context}\n\nPregunta: ${userMessage}`;
+    const result = await gemini.generateContent(prompt);
+    return result.response.text() ?? null;
+  }
+
+  return null;
 }
 
 async function retrieveChunks(projectId: string, userMessage: string): Promise<RetrievedChunk[]> {
@@ -1056,9 +1157,10 @@ async function upsertProjectForTenant(payload: z.infer<typeof createProjectSchem
        lead_sink,
        status,
        public_base_url,
-       metadata
+       metadata,
+       language_mode
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, $15::jsonb)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, $15::jsonb, $16)
      ON CONFLICT (project_key)
      DO UPDATE SET
        tenant_id = EXCLUDED.tenant_id,
@@ -1075,6 +1177,7 @@ async function upsertProjectForTenant(payload: z.infer<typeof createProjectSchem
        status = EXCLUDED.status,
        public_base_url = EXCLUDED.public_base_url,
        metadata = EXCLUDED.metadata,
+       language_mode = EXCLUDED.language_mode,
        updated_at = NOW()
      RETURNING *`,
     [
@@ -1099,6 +1202,7 @@ async function upsertProjectForTenant(payload: z.infer<typeof createProjectSchem
       payload.status,
       payload.publicBaseUrl ?? null,
       JSON.stringify(payload.metadata ?? {}),
+      payload.languageMode ?? "fixed",
     ]
   );
 
@@ -1519,6 +1623,7 @@ app.get("/v1/widget/config/:siteKey", asyncHandler(async (req, res) => {
       tone: project.promptPolicy.tone,
       outOfScopeMessage: project.promptPolicy.outOfScopeMessage,
     },
+    enableHandover: project.enableHandover ?? false,
   });
 }));
 
@@ -1536,10 +1641,10 @@ app.post("/v1/widget/sessions", asyncHandler(async (req, res) => {
   }
 
   const insert = await pool.query(
-    `INSERT INTO conversations (project_id, site_key, origin, user_agent)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO conversations (project_id, site_key, origin, user_agent, detected_language)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING id`,
-    [project.id, project.siteKey, parsed.data.origin ?? null, req.headers["user-agent"] ?? null]
+    [project.id, project.siteKey, parsed.data.origin ?? null, req.headers["user-agent"] ?? null, parsed.data.detectedLanguage ?? null]
   );
 
   await logAnalytics(project.id, insert.rows[0].id, "widget_opened", {
@@ -1561,7 +1666,7 @@ app.post("/v1/widget/messages", asyncHandler(async (req, res) => {
   }
 
   const conversation = await pool.query(
-    `SELECT c.id, c.project_id, p.*
+    `SELECT c.id, c.project_id, c.detected_language, p.*
      FROM conversations c
      INNER JOIN projects p ON p.id = c.project_id
      WHERE c.id = $1
@@ -1587,8 +1692,23 @@ app.post("/v1/widget/messages", asyncHandler(async (req, res) => {
   );
   await logAnalytics(project.id, parsed.data.conversationId, "message_sent", { message: parsed.data.message });
 
+  const convLang = project.languageMode === "auto"
+    ? ((conversation.rows[0].detected_language as string | null) ?? project.language)
+    : project.language;
   const chunks = await retrieveChunks(project.id, parsed.data.message);
-  const answer = composeAnswer(project, parsed.data.message, chunks);
+
+  let answer: ChatAnswer;
+  const llmText = await callLlm(project, parsed.data.message, chunks, convLang).catch(() => null);
+  if (llmText) {
+    const citations = chunks.slice(0, 3).map((c: RetrievedChunk) => ({
+      title: c.title,
+      url: c.canonicalUrl,
+      snippet: c.body.slice(0, 120),
+    }));
+    answer = { message: llmText, citations, cta: undefined, confidence: 0.9, usedFallback: false };
+  } else {
+    answer = composeAnswer(project, parsed.data.message, chunks, convLang);
+  }
 
   await pool.query(
     `INSERT INTO messages (conversation_id, project_id, role, body, citations, confidence)
@@ -1830,9 +1950,9 @@ app.post("/v1/portal/tenants/:tenantId/sources", requireTenantWrite, asyncHandle
 
   const result = await pool.query(
     `INSERT INTO sources (
-       project_id, source_key, kind, entry_url, include_patterns, exclude_patterns, allowed_domains, visibility, default_category
+       project_id, source_key, kind, entry_url, include_patterns, exclude_patterns, allowed_domains, visibility, default_category, source_config
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
      ON CONFLICT (project_id, source_key)
      DO UPDATE SET
        kind = EXCLUDED.kind,
@@ -1842,6 +1962,7 @@ app.post("/v1/portal/tenants/:tenantId/sources", requireTenantWrite, asyncHandle
        allowed_domains = EXCLUDED.allowed_domains,
        visibility = EXCLUDED.visibility,
        default_category = EXCLUDED.default_category,
+       source_config = EXCLUDED.source_config,
        updated_at = NOW()
      RETURNING *`,
     [
@@ -1854,6 +1975,7 @@ app.post("/v1/portal/tenants/:tenantId/sources", requireTenantWrite, asyncHandle
       parsed.data.allowedDomains,
       parsed.data.visibility,
       parsed.data.defaultCategory ?? null,
+      JSON.stringify(parsed.data.sourceConfig ?? {}),
     ]
   );
 
@@ -2464,9 +2586,9 @@ app.post("/v1/admin/sources", requireOpsOrSuperadmin, asyncHandler(async (req, r
 
   const result = await pool.query(
     `INSERT INTO sources (
-       project_id, source_key, kind, entry_url, include_patterns, exclude_patterns, allowed_domains, visibility, default_category
+       project_id, source_key, kind, entry_url, include_patterns, exclude_patterns, allowed_domains, visibility, default_category, source_config
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
      ON CONFLICT (project_id, source_key)
      DO UPDATE SET
        kind = EXCLUDED.kind,
@@ -2476,6 +2598,7 @@ app.post("/v1/admin/sources", requireOpsOrSuperadmin, asyncHandler(async (req, r
        allowed_domains = EXCLUDED.allowed_domains,
        visibility = EXCLUDED.visibility,
        default_category = EXCLUDED.default_category,
+       source_config = EXCLUDED.source_config,
        updated_at = NOW()
      RETURNING *`,
     [
@@ -2488,6 +2611,7 @@ app.post("/v1/admin/sources", requireOpsOrSuperadmin, asyncHandler(async (req, r
       parsed.data.allowedDomains,
       parsed.data.visibility,
       parsed.data.defaultCategory ?? null,
+      JSON.stringify(parsed.data.sourceConfig ?? {}),
     ]
   );
 
@@ -2583,6 +2707,828 @@ app.get("/v1/admin/analytics/summary", requireOpsOrSuperadmin, asyncHandler(asyn
 
   res.json(await buildAnalyticsSummary(project.id, project.projectKey));
 }));
+
+// ─── V1.5 ENDPOINTS ───────────────────────────────────────────────────────────
+
+// Members
+app.get("/v1/portal/tenants/:tenantId/members", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const rows = await pool.query<DbRow>(
+    `SELECT u.id AS "userId", u.email, u.display_name AS "displayName",
+            tm.role, u.status, tm.created_at AS "joinedAt"
+     FROM tenant_memberships tm JOIN users u ON tm.user_id = u.id
+     WHERE tm.tenant_id = $1 ORDER BY tm.created_at ASC`,
+    [tenantId]
+  );
+  res.json(rows.rows);
+}));
+
+app.put("/v1/portal/tenants/:tenantId/members/:userId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, userId } = req.params as { tenantId: string; userId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const { role } = z.object({ role: z.enum(["admin", "editor", "viewer"]) }).parse(req.body);
+  const r = await pool.query<DbRow>(
+    `UPDATE tenant_memberships SET role = $1 WHERE tenant_id = $2 AND user_id = $3 RETURNING *`,
+    [role, tenantId, userId]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0]);
+}));
+
+app.delete("/v1/portal/tenants/:tenantId/members/:userId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, userId } = req.params as { tenantId: string; userId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  await pool.query(`DELETE FROM tenant_memberships WHERE tenant_id = $1 AND user_id = $2`, [tenantId, userId]);
+  res.status(204).end();
+}));
+
+app.post("/v1/portal/tenants/:tenantId/invitations", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const { email, role } = z.object({ email: z.string().email(), role: z.enum(["admin", "editor", "viewer"]).default("editor") }).parse(req.body);
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  await pool.query(
+    `INSERT INTO invitations (tenant_id, email, role, invited_by, token_hash)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT ON CONSTRAINT idx_invitations_tenant_email DO UPDATE SET role = EXCLUDED.role, token_hash = EXCLUDED.token_hash, expires_at = NOW() + INTERVAL '7 days'`,
+    [tenantId, email, role, req.user?.id ?? null, tokenHash]
+  );
+  res.json({ message: "Invitation sent" });
+}));
+
+// API Keys
+app.get("/v1/portal/tenants/:tenantId/api-keys", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT id, name, key_prefix AS prefix, scopes, last_used_at AS "lastUsedAt", expires_at AS "expiresAt", created_at AS "createdAt"
+     FROM api_keys WHERE tenant_id = $1 ORDER BY created_at DESC`,
+    [tenantId]
+  );
+  res.json(r.rows);
+}));
+
+app.post("/v1/portal/tenants/:tenantId/api-keys", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const { name, scopes, expiresAt } = z.object({
+    name: z.string().min(1).max(80),
+    scopes: z.array(z.string()).default([]),
+    expiresAt: z.string().datetime().optional(),
+  }).parse(req.body);
+  const rawKey = `tlk_${randomBytes(24).toString("hex")}`;
+  const keyHash = createHash("sha256").update(rawKey).digest("hex");
+  const keyPrefix = rawKey.slice(0, 12);
+  const r = await pool.query<DbRow>(
+    `INSERT INTO api_keys (tenant_id, name, key_hash, key_prefix, scopes, expires_at)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, name, key_prefix AS prefix, scopes, last_used_at AS "lastUsedAt", expires_at AS "expiresAt", created_at AS "createdAt"`,
+    [tenantId, name, keyHash, keyPrefix, scopes, expiresAt ?? null]
+  );
+  res.status(201).json({ ...r.rows[0], key: rawKey });
+}));
+
+app.delete("/v1/portal/tenants/:tenantId/api-keys/:keyId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, keyId } = req.params as { tenantId: string; keyId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  await pool.query(`DELETE FROM api_keys WHERE id = $1 AND tenant_id = $2`, [keyId, tenantId]);
+  res.status(204).end();
+}));
+
+// Webhooks
+app.get("/v1/portal/tenants/:tenantId/webhooks", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT id, url, events, description, active, created_at AS "createdAt" FROM webhooks WHERE tenant_id = $1 ORDER BY created_at DESC`,
+    [tenantId]
+  );
+  res.json(r.rows);
+}));
+
+app.post("/v1/portal/tenants/:tenantId/webhooks", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const { url, events, description } = z.object({
+    url: z.string().url(),
+    events: z.array(z.string()).min(1),
+    description: z.string().max(200).optional(),
+  }).parse(req.body);
+  const secret = `whsec_${randomBytes(24).toString("hex")}`;
+  const secretHash = createHash("sha256").update(secret).digest("hex");
+  const r = await pool.query<DbRow>(
+    `INSERT INTO webhooks (tenant_id, url, events, secret_hash, description)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, url, events, description, active, created_at AS "createdAt"`,
+    [tenantId, url, events, secretHash, description ?? null]
+  );
+  res.status(201).json({ ...r.rows[0], secret });
+}));
+
+app.put("/v1/portal/tenants/:tenantId/webhooks/:webhookId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, webhookId } = req.params as { tenantId: string; webhookId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const body = z.object({
+    url: z.string().url().optional(),
+    events: z.array(z.string()).min(1).optional(),
+    description: z.string().max(200).nullable().optional(),
+    active: z.boolean().optional(),
+  }).parse(req.body);
+  const sets: string[] = ["updated_at = NOW()"];
+  const vals: unknown[] = [webhookId, tenantId];
+  let i = 3;
+  if (body.url !== undefined) { sets.push(`url = $${i++}`); vals.push(body.url); }
+  if (body.events !== undefined) { sets.push(`events = $${i++}`); vals.push(body.events); }
+  if (body.description !== undefined) { sets.push(`description = $${i++}`); vals.push(body.description); }
+  if (body.active !== undefined) { sets.push(`active = $${i++}`); vals.push(body.active); }
+  const r = await pool.query<DbRow>(
+    `UPDATE webhooks SET ${sets.join(", ")} WHERE id = $1 AND tenant_id = $2 RETURNING id, url, events, description, active, created_at AS "createdAt"`,
+    vals
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0]);
+}));
+
+app.delete("/v1/portal/tenants/:tenantId/webhooks/:webhookId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, webhookId } = req.params as { tenantId: string; webhookId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  await pool.query(`DELETE FROM webhooks WHERE id = $1 AND tenant_id = $2`, [webhookId, tenantId]);
+  res.status(204).end();
+}));
+
+app.post("/v1/portal/tenants/:tenantId/webhooks/:webhookId/test", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, webhookId } = req.params as { tenantId: string; webhookId: string };
+  const r = await pool.query<DbRow>(`SELECT url FROM webhooks WHERE id = $1 AND tenant_id = $2`, [webhookId, tenantId]);
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  try {
+    const resp = await fetch(r.rows[0].url as string, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Talkaris-Event": "webhook.test" },
+      body: JSON.stringify({ event: "webhook.test", timestamp: new Date().toISOString() }),
+      signal: AbortSignal.timeout(5000),
+    });
+    res.json({ ok: resp.ok, statusCode: resp.status });
+  } catch {
+    res.json({ ok: false, statusCode: 0 });
+  }
+}));
+
+// Ingestion Schedules
+app.get("/v1/portal/tenants/:tenantId/ingestion-schedules", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT id, name, source_ids AS "sourceIds", cron_expr AS "cronExpr", active,
+            last_run_at AS "lastRunAt", next_run_at AS "nextRunAt", created_at AS "createdAt"
+     FROM ingestion_schedules WHERE tenant_id = $1 ORDER BY created_at DESC`,
+    [tenantId]
+  );
+  res.json(r.rows);
+}));
+
+app.post("/v1/portal/tenants/:tenantId/ingestion-schedules", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  if (req.tenantMembership?.role === "viewer") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const { name, sourceIds, cronExpr } = z.object({
+    name: z.string().min(1).max(80),
+    sourceIds: z.array(z.string().uuid()).min(1),
+    cronExpr: z.string().min(7),
+  }).parse(req.body);
+  const r = await pool.query<DbRow>(
+    `INSERT INTO ingestion_schedules (tenant_id, name, source_ids, cron_expr)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, name, source_ids AS "sourceIds", cron_expr AS "cronExpr", active,
+               last_run_at AS "lastRunAt", next_run_at AS "nextRunAt", created_at AS "createdAt"`,
+    [tenantId, name, sourceIds, cronExpr]
+  );
+  res.status(201).json(r.rows[0]);
+}));
+
+app.put("/v1/portal/tenants/:tenantId/ingestion-schedules/:scheduleId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, scheduleId } = req.params as { tenantId: string; scheduleId: string };
+  if (req.tenantMembership?.role === "viewer") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const body = z.object({
+    name: z.string().min(1).max(80).optional(),
+    sourceIds: z.array(z.string().uuid()).optional(),
+    cronExpr: z.string().min(7).optional(),
+    active: z.boolean().optional(),
+  }).parse(req.body);
+  const sets: string[] = ["updated_at = NOW()"];
+  const vals: unknown[] = [scheduleId, tenantId];
+  let i = 3;
+  if (body.name !== undefined) { sets.push(`name = $${i++}`); vals.push(body.name); }
+  if (body.sourceIds !== undefined) { sets.push(`source_ids = $${i++}`); vals.push(body.sourceIds); }
+  if (body.cronExpr !== undefined) { sets.push(`cron_expr = $${i++}`); vals.push(body.cronExpr); }
+  if (body.active !== undefined) { sets.push(`active = $${i++}`); vals.push(body.active); }
+  const r = await pool.query<DbRow>(
+    `UPDATE ingestion_schedules SET ${sets.join(", ")} WHERE id = $1 AND tenant_id = $2
+     RETURNING id, name, source_ids AS "sourceIds", cron_expr AS "cronExpr", active,
+               last_run_at AS "lastRunAt", next_run_at AS "nextRunAt", created_at AS "createdAt"`,
+    vals
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0]);
+}));
+
+app.delete("/v1/portal/tenants/:tenantId/ingestion-schedules/:scheduleId", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, scheduleId } = req.params as { tenantId: string; scheduleId: string };
+  if (req.tenantMembership?.role === "viewer") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  await pool.query(`DELETE FROM ingestion_schedules WHERE id = $1 AND tenant_id = $2`, [scheduleId, tenantId]);
+  res.status(204).end();
+}));
+
+// Notification Preferences
+app.get("/v1/portal/tenants/:tenantId/notification-prefs", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT email_recipients AS "emailRecipients", lead_created AS "leadCreated",
+            ingestion_failed AS "ingestionFailed", low_confidence_alert AS "lowConfidenceAlert",
+            low_confidence_threshold AS "lowConfidenceThreshold", digest_frequency AS "digestFrequency"
+     FROM notification_prefs WHERE tenant_id = $1`,
+    [tenantId]
+  );
+  res.json(r.rows[0] ?? { emailRecipients: [], leadCreated: true, ingestionFailed: true, lowConfidenceAlert: false, lowConfidenceThreshold: 0.3, digestFrequency: "none" });
+}));
+
+app.put("/v1/portal/tenants/:tenantId/notification-prefs", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  if (req.tenantMembership?.role !== "admin") { res.status(403).json({ code: "FORBIDDEN" }); return; }
+  const body = z.object({
+    emailRecipients: z.array(z.string().email()).optional(),
+    leadCreated: z.boolean().optional(),
+    ingestionFailed: z.boolean().optional(),
+    lowConfidenceAlert: z.boolean().optional(),
+    lowConfidenceThreshold: z.number().min(0).max(1).optional(),
+    digestFrequency: z.enum(["none", "daily", "weekly"]).optional(),
+  }).parse(req.body);
+  const r = await pool.query<DbRow>(
+    `INSERT INTO notification_prefs (tenant_id, email_recipients, lead_created, ingestion_failed, low_confidence_alert, low_confidence_threshold, digest_frequency)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (tenant_id) DO UPDATE SET
+       email_recipients = COALESCE($2, notification_prefs.email_recipients),
+       lead_created = COALESCE($3, notification_prefs.lead_created),
+       ingestion_failed = COALESCE($4, notification_prefs.ingestion_failed),
+       low_confidence_alert = COALESCE($5, notification_prefs.low_confidence_alert),
+       low_confidence_threshold = COALESCE($6, notification_prefs.low_confidence_threshold),
+       digest_frequency = COALESCE($7, notification_prefs.digest_frequency),
+       updated_at = NOW()
+     RETURNING email_recipients AS "emailRecipients", lead_created AS "leadCreated",
+               ingestion_failed AS "ingestionFailed", low_confidence_alert AS "lowConfidenceAlert",
+               low_confidence_threshold AS "lowConfidenceThreshold", digest_frequency AS "digestFrequency"`,
+    [
+      tenantId,
+      body.emailRecipients ?? null,
+      body.leadCreated ?? null,
+      body.ingestionFailed ?? null,
+      body.lowConfidenceAlert ?? null,
+      body.lowConfidenceThreshold ?? null,
+      body.digestFrequency ?? null,
+    ]
+  );
+  res.json(r.rows[0]);
+}));
+
+// Handover — Widget
+app.post("/v1/widget/conversations/:conversationId/handover", asyncHandler(async (req, res) => {
+  const { conversationId } = req.params as { conversationId: string };
+  const { reason } = z.object({ reason: z.string().max(500).optional() }).parse(req.body);
+  const conv = await pool.query<DbRow>(`SELECT project_id FROM conversations WHERE id = $1`, [conversationId]);
+  if (!conv.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  const projectId = conv.rows[0].project_id as string;
+  await pool.query(
+    `INSERT INTO handover_events (conversation_id, project_id, reason) VALUES ($1, $2, $3)
+     ON CONFLICT DO NOTHING`,
+    [conversationId, projectId, reason ?? null]
+  );
+  // Emit webhook if any active webhook for this tenant listens to handover.requested
+  const tenantRow = await pool.query<DbRow>(`SELECT tenant_id FROM projects WHERE id = $1`, [projectId]);
+  if (tenantRow.rows[0]) {
+    const webhooks = await pool.query<DbRow>(
+      `SELECT url, secret_hash FROM webhooks WHERE tenant_id = $1 AND active = true AND $2 = ANY(events)`,
+      [tenantRow.rows[0].tenant_id as string, "handover.requested"]
+    );
+    const payload = JSON.stringify({ event: "handover.requested", conversationId, reason, timestamp: new Date().toISOString() });
+    for (const wh of webhooks.rows) {
+      const sig = createHash("sha256").update(`${wh.secret_hash}.${payload}`).digest("hex");
+      fetch(wh.url as string, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Talkaris-Signature": sig, "X-Talkaris-Event": "handover.requested" },
+        body: payload,
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => {});
+    }
+  }
+  res.json({ ok: true, message: "An agent will be with you shortly." });
+}));
+
+// Handover status — Portal
+app.get("/v1/portal/tenants/:tenantId/conversations/:conversationId/handover", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { conversationId } = req.params as { conversationId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT id, status, reason, created_at AS "createdAt" FROM handover_events WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1`,
+    [conversationId]
+  );
+  res.json(r.rows[0] ?? null);
+}));
+
+app.put("/v1/portal/tenants/:tenantId/conversations/:conversationId/handover", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { conversationId } = req.params as { conversationId: string };
+  const { status } = z.object({ status: z.enum(["pending", "assigned", "closed"]) }).parse(req.body);
+  const r = await pool.query<DbRow>(
+    `UPDATE handover_events SET status = $1 WHERE conversation_id = $2 RETURNING id, status, reason, created_at AS "createdAt"`,
+    [status, conversationId]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0]);
+}));
+
+// CSAT — Widget
+app.post("/v1/widget/conversations/:conversationId/rating", asyncHandler(async (req, res) => {
+  const { conversationId } = req.params as { conversationId: string };
+  const { score, comment } = z.object({
+    score: z.number().int().min(1).max(5),
+    comment: z.string().max(1000).optional(),
+  }).parse(req.body);
+  const conv = await pool.query<DbRow>(`SELECT project_id FROM conversations WHERE id = $1`, [conversationId]);
+  if (!conv.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  await pool.query(
+    `INSERT INTO conversation_ratings (conversation_id, project_id, score, comment)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT ON CONSTRAINT idx_conversation_ratings_unique DO UPDATE SET score = $3, comment = $4`,
+    [conversationId, conv.rows[0].project_id as string, score, comment ?? null]
+  );
+  res.json({ ok: true });
+}));
+
+// CSAT — Single conversation rating (portal)
+app.get("/v1/portal/tenants/:tenantId/conversations/:conversationId/rating", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { conversationId } = req.params as { conversationId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT score, comment FROM conversation_ratings WHERE conversation_id = $1`,
+    [conversationId]
+  );
+  res.json(r.rows[0] ?? null);
+}));
+
+// CSAT — Analytics
+app.get("/v1/portal/tenants/:tenantId/analytics/satisfaction", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const projectKey = req.query["projectKey"] as string | undefined;
+  let projectFilter = "";
+  const vals: unknown[] = [tenantId];
+  if (projectKey) {
+    const pRow = await pool.query<DbRow>(`SELECT id FROM projects WHERE project_key = $1 AND tenant_id = $2`, [projectKey, tenantId]);
+    if (!pRow.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+    projectFilter = `AND cr.project_id = $2`;
+    vals.push(pRow.rows[0].id as string);
+  }
+  const r = await pool.query<DbRow>(
+    `SELECT ROUND(AVG(cr.score)::numeric, 2) AS avg,
+            COUNT(*) AS total,
+            jsonb_object_agg(bucket.s, COALESCE(cnt.c, 0)) AS distribution
+     FROM (SELECT generate_series(1,5) AS s) bucket
+     LEFT JOIN (
+       SELECT cr.score, COUNT(*) AS c
+       FROM conversation_ratings cr
+       JOIN projects p ON cr.project_id = p.id
+       WHERE p.tenant_id = $1 ${projectFilter}
+       GROUP BY cr.score
+     ) cnt ON cnt.score = bucket.s,
+     conversation_ratings cr
+     JOIN projects p ON cr.project_id = p.id
+     WHERE p.tenant_id = $1 ${projectFilter}`,
+    vals
+  );
+  const comments = await pool.query<DbRow>(
+    `SELECT cr.score, cr.comment, cr.created_at AS date
+     FROM conversation_ratings cr
+     JOIN projects p ON cr.project_id = p.id
+     WHERE p.tenant_id = $1 ${projectFilter} AND cr.comment IS NOT NULL
+     ORDER BY cr.created_at DESC LIMIT 10`,
+    vals
+  );
+  res.json({
+    avg: Number(r.rows[0]?.avg ?? 0),
+    total: Number(r.rows[0]?.total ?? 0),
+    distribution: r.rows[0]?.distribution ?? {},
+    recentComments: comments.rows,
+  });
+}));
+
+// Bot Test Chat
+app.post("/v1/portal/tenants/:tenantId/projects/:projectKey/test-chat", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey } = req.params as { tenantId: string; projectKey: string };
+  const { message } = z.object({ message: z.string().min(1).max(2000) }).parse(req.body);
+  const pRow = await pool.query<DbRow>(
+    `SELECT p.* FROM projects p WHERE p.project_key = $1 AND p.tenant_id = $2`,
+    [projectKey, tenantId]
+  );
+  if (!pRow.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  const project = pRow.rows[0] as ProjectRecord;
+  const chunks = await retrieveChunks(project.id, message);
+  const answer = composeAnswer(project, message, chunks);
+  res.json({
+    message: answer.message,
+    citations: answer.citations ?? [],
+    confidence: answer.confidence ?? 0,
+    usedFallback: answer.usedFallback ?? false,
+  });
+}));
+
+// Exports
+app.get("/v1/portal/tenants/:tenantId/export/conversations", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT c.id, c.session_id, p.project_key, c.started_at, c.ended_at,
+            (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id) AS message_count
+     FROM conversations c JOIN projects p ON c.project_id = p.id
+     WHERE p.tenant_id = $1 ORDER BY c.started_at DESC`,
+    [tenantId]
+  );
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="conversations.csv"`);
+  const header = "id,session_id,project_key,started_at,ended_at,message_count\n";
+  const rows = r.rows.map((row) => `${row.id},${row.session_id},${row.project_key},${row.started_at},${row.ended_at ?? ""},${row.message_count}`).join("\n");
+  res.send(header + rows);
+}));
+
+app.get("/v1/portal/tenants/:tenantId/export/leads", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT le.id, le.name, le.email, le.phone, le.company, p.project_key, le.created_at
+     FROM lead_events le JOIN projects p ON le.project_id = p.id
+     WHERE p.tenant_id = $1 ORDER BY le.created_at DESC`,
+    [tenantId]
+  );
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="leads.csv"`);
+  const header = "id,name,email,phone,company,project_key,created_at\n";
+  const rows = r.rows.map((row) => `${row.id},"${row.name ?? ""}","${row.email ?? ""}","${row.phone ?? ""}","${row.company ?? ""}",${row.project_key},${row.created_at}`).join("\n");
+  res.send(header + rows);
+}));
+
+app.get("/v1/portal/tenants/:tenantId/export/analytics", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const r = await pool.query<DbRow>(
+    `SELECT ae.id, ae.event_type, ae.session_id, p.project_key, ae.meta, ae.created_at
+     FROM analytics_events ae JOIN projects p ON ae.project_id = p.id
+     WHERE p.tenant_id = $1 ORDER BY ae.created_at DESC LIMIT 50000`,
+    [tenantId]
+  );
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="analytics.csv"`);
+  const header = "id,event_type,session_id,project_key,meta,created_at\n";
+  const rows = r.rows.map((row) => `${row.id},${row.event_type},${row.session_id},${row.project_key},"${JSON.stringify(row.meta ?? {}).replace(/"/g, '""')}",${row.created_at}`).join("\n");
+  res.send(header + rows);
+}));
+
+// ─── END V1.5 ENDPOINTS ───────────────────────────────────────────────────────
+
+// ─── V2 ENDPOINTS ─────────────────────────────────────────────────────────────
+
+// V2-B: AI config per project
+const aiConfigSchema = z.object({
+  provider: z.enum(["openai", "anthropic", "deepseek", "google", "local"]).optional(),
+  model: z.string().max(100).optional(),
+  temperature: z.number().min(0).max(1).optional(),
+  maxTokens: z.number().int().min(256).max(4096).optional(),
+  systemPromptAdditions: z.string().max(2000).optional(),
+});
+
+app.get("/v1/portal/tenants/:tenantId/projects/:projectKey/ai-config", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey } = req.params as { tenantId: string; projectKey: string };
+  const r = await pool.query<{ ai_config: Record<string, unknown> }>(
+    `SELECT ai_config FROM projects WHERE tenant_id = $1 AND project_key = $2`,
+    [tenantId, projectKey]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0].ai_config ?? {});
+}));
+
+app.put("/v1/portal/tenants/:tenantId/projects/:projectKey/ai-config", requireTenantWrite, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey } = req.params as { tenantId: string; projectKey: string };
+  const config = aiConfigSchema.parse(req.body);
+  const r = await pool.query<{ ai_config: Record<string, unknown> }>(
+    `UPDATE projects SET ai_config = $1 WHERE tenant_id = $2 AND project_key = $3 RETURNING ai_config`,
+    [JSON.stringify(config), tenantId, projectKey]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0].ai_config);
+}));
+
+// V2-E: Toggle enable_handover per project
+app.put("/v1/portal/tenants/:tenantId/projects/:projectKey/features", requireTenantWrite, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey } = req.params as { tenantId: string; projectKey: string };
+  const { enableHandover } = z.object({ enableHandover: z.boolean() }).parse(req.body);
+  const r = await pool.query<DbRow>(
+    `UPDATE projects SET enable_handover = $1 WHERE tenant_id = $2 AND project_key = $3 RETURNING project_key, enable_handover`,
+    [enableHandover, tenantId, projectKey]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json({ projectKey: r.rows[0].project_key as string, enableHandover: r.rows[0].enable_handover as boolean });
+}));
+
+// V2-C: Handover queue (all pending across tenant)
+app.get("/v1/portal/tenants/:tenantId/handovers", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const status = (req.query["status"] as string) ?? "pending";
+  const r = await pool.query(
+    `SELECT he.id, he.status, he.reason, he.created_at AS "createdAt",
+            he.claimed_by AS "claimedBy", he.claimed_at AS "claimedAt",
+            he.resolved_at AS "resolvedAt", he.notes,
+            c.session_id AS "sessionId", p.project_key AS "projectKey", p.bot_name AS "botName"
+     FROM handover_events he
+     JOIN conversations c ON c.id = he.conversation_id
+     JOIN projects p ON p.id = he.project_id
+     WHERE p.tenant_id = $1 AND he.status = $2
+     ORDER BY he.created_at DESC
+     LIMIT 100`,
+    [tenantId, status]
+  );
+  res.json(r.rows);
+}));
+
+app.put("/v1/portal/tenants/:tenantId/handovers/:handoverId/claim", requireTenantWrite, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, handoverId } = req.params as { tenantId: string; handoverId: string };
+  const r = await pool.query(
+    `UPDATE handover_events he
+     SET status = 'assigned', claimed_by = $1, claimed_at = NOW()
+     FROM projects p
+     WHERE he.id = $2 AND he.project_id = p.id AND p.tenant_id = $3
+     RETURNING he.id, he.status, he.reason, he.claimed_by AS "claimedBy",
+               he.claimed_at AS "claimedAt", he.created_at AS "createdAt"`,
+    [req.user!.id, handoverId, tenantId]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0]);
+}));
+
+app.put("/v1/portal/tenants/:tenantId/handovers/:handoverId/resolve", requireTenantWrite, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, handoverId } = req.params as { tenantId: string; handoverId: string };
+  const { notes } = z.object({ notes: z.string().max(1000).optional() }).parse(req.body);
+  const r = await pool.query(
+    `UPDATE handover_events he
+     SET status = 'closed', resolved_at = NOW(), notes = COALESCE($1, he.notes)
+     FROM projects p
+     WHERE he.id = $2 AND he.project_id = p.id AND p.tenant_id = $3
+     RETURNING he.id, he.status, he.resolved_at AS "resolvedAt", he.notes, he.created_at AS "createdAt"`,
+    [notes ?? null, handoverId, tenantId]
+  );
+  if (!r.rows[0]) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  res.json(r.rows[0]);
+}));
+
+// V2-D: RAG quality analytics
+app.get("/v1/portal/tenants/:tenantId/analytics/rag-quality", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const { projectKey, period = "30d" } = req.query as { projectKey?: string; period?: string };
+  const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
+
+  const projectFilter = projectKey ? `AND p.project_key = $3` : "";
+  const params: (string | number)[] = [tenantId, days];
+  if (projectKey) params.push(projectKey);
+
+  // Aggregate from analytics_events
+  const r = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE ae.event_type = 'message_sent') AS total_messages,
+       COUNT(*) FILTER (WHERE ae.event_type = 'fallback_triggered') AS fallback_count,
+       AVG((ae.meta->>'confidence')::numeric) FILTER (WHERE ae.meta ? 'confidence') AS avg_confidence,
+       COUNT(*) FILTER (WHERE (ae.meta->>'confidence')::numeric < 0.3 AND ae.meta ? 'confidence') AS low_confidence_count
+     FROM analytics_events ae
+     JOIN projects p ON p.project_key = ae.project_key AND p.tenant_id = ae.tenant_id
+     WHERE ae.tenant_id = $1
+       AND ae.created_at >= NOW() - ($2 || ' days')::interval
+       ${projectFilter}`,
+    params
+  );
+
+  // Top unanswered questions
+  const gapsR = await pool.query(
+    `SELECT ae.meta->>'question' AS question, COUNT(*) AS cnt
+     FROM analytics_events ae
+     JOIN projects p ON p.project_key = ae.project_key AND p.tenant_id = ae.tenant_id
+     WHERE ae.tenant_id = $1
+       AND ae.event_type = 'unanswered_question'
+       AND ae.created_at >= NOW() - ($2 || ' days')::interval
+       ${projectFilter}
+       AND ae.meta ? 'question'
+     GROUP BY ae.meta->>'question'
+     ORDER BY cnt DESC
+     LIMIT 10`,
+    params
+  );
+
+  const totMsg = parseInt(r.rows[0]?.total_messages ?? "0", 10);
+  const fallbacks = parseInt(r.rows[0]?.fallback_count ?? "0", 10);
+  const lowConf = parseInt(r.rows[0]?.low_confidence_count ?? "0", 10);
+  const avgConf = r.rows[0]?.avg_confidence != null ? parseFloat(r.rows[0].avg_confidence) : null;
+  const unanswered = gapsR.rows.map((row) => ({ question: row.question as string, count: parseInt(row.cnt as string, 10) }));
+
+  res.json({
+    period,
+    totalMessages: totMsg,
+    fallbackRate: totMsg > 0 ? Math.round((fallbacks / totMsg) * 1000) / 10 : 0,
+    avgConfidence: avgConf != null ? Math.round(avgConf * 100) / 100 : null,
+    lowConfidenceCount: lowConf,
+    coverageScore: totMsg > 0 ? Math.round(((totMsg - fallbacks) / totMsg) * 100) : null,
+    topGaps: unanswered,
+  });
+}));
+
+// V3-C: Analytics trends (resolution rate, handover rate, daily series)
+app.get("/v1/portal/tenants/:tenantId/analytics/trends", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId } = req.params as { tenantId: string };
+  const { projectKey, period = "30d" } = req.query as { projectKey?: string; period?: string };
+  const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
+
+  const projectFilter = projectKey ? `AND p.project_key = $3` : "";
+  const params: (string | number)[] = [tenantId, days];
+  if (projectKey) params.push(projectKey);
+
+  // Resolution rate + handover rate + avg messages per conv + avg duration
+  const ratesR = await pool.query(
+    `SELECT
+       COUNT(DISTINCT c.id) AS total_convs,
+       COUNT(DISTINCT c.id) FILTER (WHERE NOT EXISTS (
+         SELECT 1 FROM analytics_events ae2
+         WHERE ae2.conversation_id = c.id::text AND ae2.event_type = 'fallback'
+       )) AS resolved_convs,
+       COUNT(DISTINCT he.conversation_id) AS handover_convs,
+       AVG(msg_counts.cnt)::numeric AS avg_messages,
+       AVG(EXTRACT(EPOCH FROM (last_msg.ts - c.created_at)) / 60)::numeric AS avg_duration_minutes
+     FROM conversations c
+     JOIN projects p ON p.id = c.project_id AND p.tenant_id = $1
+     LEFT JOIN handover_events he ON he.conversation_id = c.id
+     LEFT JOIN LATERAL (
+       SELECT COUNT(*) AS cnt FROM messages m WHERE m.conversation_id = c.id
+     ) msg_counts ON true
+     LEFT JOIN LATERAL (
+       SELECT MAX(m2.created_at) AS ts FROM messages m2 WHERE m2.conversation_id = c.id
+     ) last_msg ON true
+     WHERE c.created_at >= NOW() - ($2 || ' days')::interval
+       ${projectFilter}`,
+    params
+  );
+
+  // Daily series
+  const dailyR = await pool.query(
+    `SELECT
+       DATE(ae.created_at) AS day,
+       COUNT(*) FILTER (WHERE ae.event_type = 'message_sent') AS messages,
+       COUNT(DISTINCT ae.conversation_id) FILTER (WHERE ae.event_type = 'response_served') AS resolved,
+       COUNT(DISTINCT he2.conversation_id) AS handovers
+     FROM analytics_events ae
+     JOIN projects p ON p.project_key = ae.project_key AND p.tenant_id = ae.tenant_id
+     LEFT JOIN handover_events he2 ON he2.conversation_id::text = ae.conversation_id
+       AND DATE(he2.created_at) = DATE(ae.created_at)
+     WHERE ae.tenant_id = $1
+       AND ae.created_at >= NOW() - ($2 || ' days')::interval
+       ${projectFilter}
+     GROUP BY DATE(ae.created_at)
+     ORDER BY day ASC`,
+    params
+  );
+
+  const row = ratesR.rows[0] ?? {};
+  const total = parseInt(row.total_convs ?? "0", 10);
+  const resolved = parseInt(row.resolved_convs ?? "0", 10);
+  const handovers = parseInt(row.handover_convs ?? "0", 10);
+
+  res.json({
+    period,
+    resolutionRate: total > 0 ? Math.round((resolved / total) * 1000) / 10 : null,
+    handoverRate: total > 0 ? Math.round((handovers / total) * 1000) / 10 : null,
+    avgMessagesPerConversation: row.avg_messages != null ? Math.round(parseFloat(row.avg_messages) * 10) / 10 : null,
+    avgConversationDurationMinutes: row.avg_duration_minutes != null ? Math.round(parseFloat(row.avg_duration_minutes) * 10) / 10 : null,
+    dailySeries: dailyR.rows.map((r) => ({
+      date: (r.day as Date).toISOString().slice(0, 10),
+      messages: parseInt(r.messages ?? "0", 10),
+      resolved: parseInt(r.resolved ?? "0", 10),
+      handovers: parseInt(r.handovers ?? "0", 10),
+    })),
+  });
+}));
+
+// ─── V3-D: CHANNELS (TELEGRAM) ────────────────────────────────────────────────
+
+// Portal: list channels for a project
+app.get("/v1/portal/tenants/:tenantId/projects/:projectKey/channels", requireTenantRead, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey } = req.params as { tenantId: string; projectKey: string };
+  const r = await pool.query(
+    `SELECT ch.id, ch.kind, ch.status, ch.created_at,
+            (ch.config->>'botToken') IS NOT NULL AS has_token
+     FROM channels ch
+     JOIN projects p ON p.id = ch.project_id
+     WHERE p.project_key = $1 AND p.tenant_id = $2
+     ORDER BY ch.created_at DESC`,
+    [projectKey, tenantId]
+  );
+  res.json(r.rows);
+}));
+
+// Portal: create a Telegram channel (registers webhook automatically)
+app.post("/v1/portal/tenants/:tenantId/projects/:projectKey/channels", requireTenantWrite, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey } = req.params as { tenantId: string; projectKey: string };
+  const { botToken } = z.object({ botToken: z.string().min(10) }).parse(req.body);
+
+  const projectR = await pool.query(
+    `SELECT id FROM projects WHERE project_key = $1 AND tenant_id = $2 LIMIT 1`,
+    [projectKey, tenantId]
+  );
+  if (!projectR.rowCount) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+  const projectId = projectR.rows[0].id as string;
+
+  const channelId = randomUUID();
+  const webhookSecret = env.TELEGRAM_WEBHOOK_SECRET;
+
+  // Build webhook URL pointing to this API's public base
+  const apiBase = `${req.protocol}://${req.get("host")}`;
+  const webhookUrl = `${apiBase}/v1/telegram/webhook/${channelId}`;
+
+  // Register webhook with Telegram
+  await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      url: webhookUrl,
+      secret_token: webhookSecret,
+    }),
+  });
+
+  await pool.query(
+    `INSERT INTO channels (id, project_id, kind, config, status)
+     VALUES ($1, $2, 'telegram', $3::jsonb, 'active')`,
+    [channelId, projectId, JSON.stringify({ botToken, webhookSecret })]
+  );
+
+  res.status(201).json({ id: channelId, kind: "telegram", status: "active", webhookUrl });
+}));
+
+// Portal: delete a channel (and unregister webhook)
+app.delete("/v1/portal/tenants/:tenantId/projects/:projectKey/channels/:channelId", requireTenantWrite, asyncHandler(async (req: PortalAuthedRequest, res) => {
+  const { tenantId, projectKey, channelId } = req.params as { tenantId: string; projectKey: string; channelId: string };
+  const r = await pool.query(
+    `SELECT ch.id, ch.kind, ch.config FROM channels ch
+     JOIN projects p ON p.id = ch.project_id
+     WHERE ch.id = $1 AND p.project_key = $2 AND p.tenant_id = $3 LIMIT 1`,
+    [channelId, projectKey, tenantId]
+  );
+  if (!r.rowCount) { res.status(404).json({ code: "NOT_FOUND" }); return; }
+
+  const cfg = r.rows[0].config as { botToken?: string };
+  if (cfg.botToken) {
+    await fetch(`https://api.telegram.org/bot${cfg.botToken}/deleteWebhook`).catch(() => {});
+  }
+  await pool.query(`DELETE FROM channels WHERE id = $1`, [channelId]);
+  res.json({ ok: true });
+}));
+
+// Public: Telegram webhook receiver
+app.post("/v1/telegram/webhook/:channelId", asyncHandler(async (req, res) => {
+  // Validate secret
+  const secret = req.headers["x-telegram-bot-api-secret-token"] as string | undefined;
+  if (secret !== env.TELEGRAM_WEBHOOK_SECRET) { res.status(401).end(); return; }
+
+  const { channelId } = req.params as { channelId: string };
+  const update = req.body as { message?: { chat: { id: number }; text?: string; from?: { language_code?: string } } };
+  const text = update.message?.text?.trim();
+  const chatId = update.message?.chat?.id;
+  if (!text || !chatId) { res.json({ ok: true }); return; }
+
+  // Load channel → project
+  const chR = await pool.query(
+    `SELECT ch.config, p.*, p.project_key FROM channels ch
+     JOIN projects p ON p.id = ch.project_id
+     WHERE ch.id = $1 AND ch.kind = 'telegram' AND ch.status = 'active' LIMIT 1`,
+    [channelId]
+  );
+  if (!chR.rowCount) { res.json({ ok: true }); return; }
+
+  const cfg = chR.rows[0].config as { botToken: string };
+  const project = normalizeProject(chR.rows[0]);
+  const lang = update.message?.from?.language_code?.slice(0, 2) ?? project.language;
+
+  // RAG pipeline
+  const chunks = await retrieveChunks(project.id, text);
+  let replyText: string;
+  const llmText = await callLlm(project, text, chunks, lang).catch(() => null);
+  if (llmText) {
+    replyText = llmText;
+  } else {
+    const answer = composeAnswer(project, text, chunks, lang);
+    replyText = answer.message;
+  }
+
+  // Send reply via Telegram
+  await fetch(`https://api.telegram.org/bot${cfg.botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text: replyText }),
+  });
+
+  res.json({ ok: true });
+}));
+
+// ─── END V3 ENDPOINTS ─────────────────────────────────────────────────────────
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const message = error instanceof Error ? error.message : "Unknown error";
