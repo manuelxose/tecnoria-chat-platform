@@ -5,6 +5,8 @@ import { CockpitStore } from "../cockpit-store.service";
 import { PortalApiService } from "../../core/portal-api.service";
 import { ChannelItem, Project } from "../../core/models";
 
+type ChannelKind = "telegram" | "whatsapp";
+
 @Component({
   selector: "app-channels",
   standalone: true,
@@ -20,16 +22,16 @@ import { ChannelItem, Project } from "../../core/models";
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Channels</h1>
-          <p class="ck-page-header__sub">Connect your bots to Telegram and other messaging platforms</p>
+          <p class="ck-page-header__sub">Operate Telegram and WhatsApp from the same bot runtime.</p>
         </div>
         <div class="ck-page-header__actions">
-          <select class="ck-select" style="min-width: 200px;" [(ngModel)]="selectedProjectKey" (ngModelChange)="onProjectChange($event)">
+          <select class="ck-select ck-select--project" [(ngModel)]="selectedProjectKey" (ngModelChange)="onProjectChange()">
             @for (p of projects; track p.projectKey) {
               <option [value]="p.projectKey">{{ p.botName }} · {{ p.projectKey }}</option>
             }
           </select>
-          <button class="ck-btn ck-btn--primary" (click)="openAddModal()" [disabled]="!selectedProjectKey">
-            + Add Telegram Bot
+          <button class="ck-btn ck-btn--primary" (click)="openAddModal('telegram')" [disabled]="!selectedProjectKey">
+            + Add Channel
           </button>
         </div>
       </div>
@@ -39,128 +41,186 @@ import { ChannelItem, Project } from "../../core/models";
           <div class="ck-empty">
             <div class="ck-empty__icon">◫</div>
             <p class="ck-empty__title">Select a bot to manage channels</p>
+            <p class="ck-empty__sub">Channels are isolated per bot and share the same governed runtime.</p>
           </div>
         </div>
       } @else if (loading) {
         <div class="ck-card">
-          <div class="ck-skeleton" style="height: 80px;"></div>
-        </div>
-      } @else if (channels.length === 0) {
-        <div class="ck-card">
-          <div class="ck-empty">
-            <div class="ck-empty__icon">◫</div>
-            <p class="ck-empty__title">No channels yet</p>
-            <p class="ck-empty__sub">Add a Telegram bot to start receiving messages from Telegram.</p>
-            <button class="ck-btn ck-btn--primary" style="margin-top: 16px;" (click)="openAddModal()">
-              + Add Telegram Bot
-            </button>
-          </div>
+          <div class="ck-skeleton ck-skeleton--2xl ck-skeleton--mb-md"></div>
+          <div class="ck-skeleton ck-skeleton--xl ck-skeleton--mb-md"></div>
+          <div class="ck-skeleton ck-skeleton--xl"></div>
         </div>
       } @else {
-        <div class="ck-card">
-          <div class="ck-table-wrap">
-            <table class="ck-table">
-              <thead>
-                <tr>
-                  <th>Platform</th>
-                  <th>Status</th>
-                  <th>Bot Token</th>
-                  <th>Created</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (ch of channels; track ch.id) {
-                  <tr>
-                    <td>
-                      <span class="ck-badge ck-badge--default" style="text-transform: uppercase; letter-spacing: 0.5px;">
-                        {{ ch.kind }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="ck-badge" [class]="ch.status === 'active' ? 'ck-badge--success' : 'ck-badge--warning'">
-                        <span class="ck-dot"></span>
-                        {{ ch.status }}
-                      </span>
-                    </td>
-                    <td style="font-size: 0.82rem; color: var(--ck-text-muted);">
-                      {{ ch.has_token ? '••••••••' : '—' }}
-                    </td>
-                    <td style="font-size: 0.82rem; color: var(--ck-text-muted);">
-                      {{ ch.created_at | slice:0:10 }}
-                    </td>
-                    <td>
-                      <button class="ck-btn ck-btn--ghost ck-btn--sm"
-                              style="color: var(--ck-red);"
-                              (click)="confirmDelete(ch)"
-                              [disabled]="deleting === ch.id">
-                        {{ deleting === ch.id ? '…' : 'Remove' }}
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div class="ck-grid-sidebar">
+          <div class="ck-stack-lg">
+            @if (channels.length === 0) {
+              <div class="ck-card">
+                <div class="ck-empty">
+                  <div class="ck-empty__icon">⇄</div>
+                  <p class="ck-empty__title">No channels configured</p>
+                  <p class="ck-empty__sub">Add Telegram or WhatsApp to route real conversations into this bot.</p>
+                  <div class="ck-flow-inline">
+                    <button class="ck-btn ck-btn--primary" (click)="openAddModal('telegram')">Telegram</button>
+                    <button class="ck-btn ck-btn--secondary" (click)="openAddModal('whatsapp')">WhatsApp</button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              @for (channel of channels; track channel.id) {
+                <div class="ck-card ck-stack-md">
+                  <div class="ck-row-between-start">
+                    <div class="ck-stack-xs">
+                      <div class="ck-flow-inline">
+                        <span class="ck-badge ck-badge--default">{{ channel.kind }}</span>
+                        <span class="ck-badge" [class]="channel.status === 'active' ? 'ck-badge ck-badge--success' : 'ck-badge ck-badge--warning'">
+                          {{ channel.status }}
+                        </span>
+                        <span class="ck-badge" [class]="channel.verified ? 'ck-badge ck-badge--info' : 'ck-badge ck-badge--default'">
+                          {{ channel.verified ? 'verified' : 'pending verification' }}
+                        </span>
+                      </div>
+                      <p class="ck-card__title">{{ channel.label || selectedProjectKey }}</p>
+                      <p class="ck-card__sub">{{ channelSummary(channel) }}</p>
+                    </div>
+                    <button
+                      class="ck-btn ck-btn--ghost ck-btn--sm"
+                      (click)="confirmDelete(channel)"
+                      [disabled]="deleting === channel.id"
+                    >
+                      {{ deleting === channel.id ? "Removing…" : "Remove" }}
+                    </button>
+                  </div>
 
-        <!-- How it works info box -->
-        <div class="ck-card" style="margin-top: 16px;">
-          <div class="ck-card__header">
-            <p class="ck-card__title">How it works</p>
+                  <div class="ck-note">
+                    <div class="ck-stack-xs">
+                      <span class="ck-text-xs ck-text-muted">Webhook</span>
+                      <code class="ck-font-mono ck-text-sm ck-text-soft">{{ channel.webhookUrl || "Not available" }}</code>
+                    </div>
+                  </div>
+
+                  @if (channel.phoneNumber) {
+                    <div class="ck-row-between">
+                      <span class="ck-text-sm ck-text-muted">Phone</span>
+                      <strong class="ck-text-sm">{{ channel.phoneNumber }}</strong>
+                    </div>
+                  }
+
+                  @if (channel.lastError) {
+                    <div class="ck-alert ck-alert--danger">{{ channel.lastError }}</div>
+                  }
+                </div>
+              }
+            }
           </div>
-          <ol style="padding-left: 20px; font-size: 0.84rem; color: var(--ck-text-soft); line-height: 2;">
-            <li>Create a Telegram bot via <strong>&#64;BotFather</strong> and get your bot token.</li>
-            <li>Paste the token above — the webhook is registered automatically.</li>
-            <li>Users message your Telegram bot and receive RAG-powered replies instantly.</li>
-          </ol>
+
+          <div class="ck-card ck-stack-lg">
+            <div class="ck-card__header">
+              <div>
+                <p class="ck-card__title">Channel Design</p>
+                <p class="ck-card__sub">The same runtime, history and governance across widget, Telegram and WhatsApp.</p>
+              </div>
+            </div>
+            <div class="ck-stack-sm">
+              <div class="ck-note">
+                <strong class="ck-text-sm">Telegram</strong>
+                <p class="ck-text-sm ck-text-soft ck-mt-sm">Paste your BotFather token and Talkaris registers the webhook automatically.</p>
+              </div>
+              <div class="ck-note">
+                <strong class="ck-text-sm">WhatsApp Meta Cloud</strong>
+                <p class="ck-text-sm ck-text-soft ck-mt-sm">Use the webhook URL and verify token from Talkaris in the Meta app configuration, then incoming messages will flow into the same bot runtime.</p>
+              </div>
+            </div>
+          </div>
         </div>
       }
     </div>
 
-    <!-- Add Telegram modal -->
     @if (showAddModal) {
-      <div style="position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"
-           (click)="showAddModal = false">
-        <div class="ck-card" style="width: 440px; background: var(--ck-surface-raised);" (click)="$event.stopPropagation()">
+      <div class="ck-modal-backdrop" (click)="closeModal()">
+        <div class="ck-card ck-modal ck-stack-lg" (click)="$event.stopPropagation()">
           <div class="ck-card__header">
             <div>
-              <p class="ck-card__title">Add Telegram Bot</p>
-              <p class="ck-card__sub">Connect your Telegram bot to this project</p>
+              <p class="ck-card__title">Add Channel</p>
+              <p class="ck-card__sub">Connect {{ selectedProjectKey }} to Telegram or WhatsApp.</p>
             </div>
-            <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="showAddModal = false">✕</button>
+            <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="closeModal()">✕</button>
           </div>
 
-          <div style="display: grid; gap: 16px; margin-top: 8px;">
-            <div class="ck-field">
-              <label class="ck-label">Bot Token</label>
-              <input class="ck-input" [(ngModel)]="newBotToken"
-                     placeholder="1234567890:ABCdefGHIjklMNOpqrSTUvwxyz"
-                     [disabled]="adding" />
-              <span style="font-size: 0.75rem; color: var(--ck-text-muted);">
-                Get this from <strong>&#64;BotFather</strong> on Telegram → /newbot
-              </span>
-            </div>
+          <div class="ck-tabs">
+            <button class="ck-tab" [class.is-active]="channelKind === 'telegram'" (click)="channelKind = 'telegram'">Telegram</button>
+            <button class="ck-tab" [class.is-active]="channelKind === 'whatsapp'" (click)="channelKind = 'whatsapp'">WhatsApp</button>
+          </div>
 
-            @if (addError) {
-              <div style="background: var(--ck-red-soft, rgba(248,81,73,0.12)); color: var(--ck-red, #f85149); padding: 10px 12px; border-radius: var(--ck-radius-sm); font-size: 0.83rem;">
-                {{ addError }}
+          @if (channelKind === 'telegram') {
+            <div class="ck-form-stack">
+              <div class="ck-field">
+                <label class="ck-label">Display Label</label>
+                <input class="ck-input" [(ngModel)]="telegramForm.label" placeholder="Support bot" />
               </div>
-            }
-
-            @if (webhookUrl) {
-              <div style="background: var(--ck-accent-soft); border-radius: var(--ck-radius-sm); padding: 10px 12px;">
-                <p style="font-size: 0.78rem; color: var(--ck-accent-strong); margin: 0 0 4px;">Webhook registered at:</p>
-                <code style="font-size: 0.75rem; word-break: break-all;">{{ webhookUrl }}</code>
+              <div class="ck-field">
+                <label class="ck-label">Bot Token</label>
+                <input class="ck-input" [(ngModel)]="telegramForm.botToken" placeholder="1234567890:ABC..." />
+                <span class="ck-text-xs ck-text-muted">Issued by BotFather. The webhook is registered automatically.</span>
               </div>
-            }
-
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-              <button class="ck-btn ck-btn--ghost" (click)="showAddModal = false" [disabled]="adding">Cancel</button>
-              <button class="ck-btn ck-btn--primary" (click)="addChannel()" [disabled]="adding || !newBotToken">
-                {{ adding ? 'Connecting…' : 'Connect Bot' }}
-              </button>
             </div>
+          } @else {
+            <div class="ck-form-stack">
+              <div class="ck-field">
+                <label class="ck-label">Display Label</label>
+                <input class="ck-input" [(ngModel)]="whatsappForm.label" placeholder="Sales WhatsApp" />
+              </div>
+              <div class="ck-form-grid">
+                <div class="ck-field">
+                  <label class="ck-label">Access Token</label>
+                  <input class="ck-input" [(ngModel)]="whatsappForm.accessToken" type="password" placeholder="EAA..." />
+                </div>
+                <div class="ck-field">
+                  <label class="ck-label">Phone Number ID</label>
+                  <input class="ck-input" [(ngModel)]="whatsappForm.phoneNumberId" placeholder="123456789012345" />
+                </div>
+              </div>
+              <div class="ck-form-grid">
+                <div class="ck-field">
+                  <label class="ck-label">Business Account ID</label>
+                  <input class="ck-input" [(ngModel)]="whatsappForm.businessAccountId" placeholder="Optional" />
+                </div>
+                <div class="ck-field">
+                  <label class="ck-label">Display Phone</label>
+                  <input class="ck-input" [(ngModel)]="whatsappForm.displayPhoneNumber" placeholder="+34 600 000 000" />
+                </div>
+              </div>
+              <div class="ck-form-grid">
+                <div class="ck-field">
+                  <label class="ck-label">Verify Token</label>
+                  <input class="ck-input" [(ngModel)]="whatsappForm.verifyToken" placeholder="talkaris-meta-verify-token" />
+                </div>
+                <div class="ck-field">
+                  <label class="ck-label">App Secret</label>
+                  <input class="ck-input" [(ngModel)]="whatsappForm.appSecret" type="password" placeholder="Optional" />
+                </div>
+              </div>
+              <p class="ck-text-xs ck-text-muted">After saving, use the generated webhook URL and verify token in Meta Cloud API.</p>
+            </div>
+          }
+
+          @if (addError) {
+            <div class="ck-alert ck-alert--danger">{{ addError }}</div>
+          }
+
+          @if (createdWebhookUrl) {
+            <div class="ck-note ck-note--accent">
+              <div class="ck-stack-xs">
+                <span class="ck-text-xs ck-text-muted">Webhook ready</span>
+                <code class="ck-font-mono ck-text-sm">{{ createdWebhookUrl }}</code>
+              </div>
+            </div>
+          }
+
+          <div class="ck-row-between">
+            <button class="ck-btn ck-btn--ghost" (click)="closeModal()" [disabled]="adding">Cancel</button>
+            <button class="ck-btn ck-btn--primary" (click)="addChannel()" [disabled]="adding || !isChannelFormValid()">
+              {{ adding ? "Connecting…" : "Connect Channel" }}
+            </button>
           </div>
         </div>
       </div>
@@ -174,10 +234,25 @@ export class ChannelsComponent implements OnInit {
   loading = false;
   deleting = "";
   showAddModal = false;
-  newBotToken = "";
   adding = false;
   addError = "";
-  webhookUrl = "";
+  createdWebhookUrl = "";
+  channelKind: ChannelKind = "telegram";
+
+  telegramForm = {
+    label: "",
+    botToken: "",
+  };
+
+  whatsappForm = {
+    label: "",
+    accessToken: "",
+    phoneNumberId: "",
+    businessAccountId: "",
+    verifyToken: "",
+    appSecret: "",
+    displayPhoneNumber: "",
+  };
 
   constructor(
     private readonly store: CockpitStore,
@@ -185,31 +260,42 @@ export class ChannelsComponent implements OnInit {
   ) {
     effect(() => {
       const id = this.store.activeTenantId();
-      if (id) this.loadProjects(id);
+      if (id) {
+        void this.loadProjects(id);
+      }
     });
   }
 
   async ngOnInit(): Promise<void> {
-    const id = this.store.activeTenantId();
-    if (id) await this.loadProjects(id);
-  }
-
-  private async loadProjects(tenantId: string): Promise<void> {
-    this.projects = await this.api.tenantProjects(tenantId);
-    if (this.projects.length) {
-      this.selectedProjectKey = this.projects[0].projectKey;
-      await this.loadChannels();
+    const tenantId = this.store.activeTenantId();
+    if (tenantId) {
+      await this.loadProjects(tenantId);
     }
   }
 
-  onProjectChange(_key: string): void {
-    this.channels = [];
-    this.loadChannels();
+  async loadProjects(tenantId: string): Promise<void> {
+    this.projects = await this.api.tenantProjects(tenantId);
+    if (!this.projects.length) {
+      this.selectedProjectKey = "";
+      this.channels = [];
+      return;
+    }
+    if (!this.selectedProjectKey || !this.projects.some((project) => project.projectKey === this.selectedProjectKey)) {
+      this.selectedProjectKey = this.projects[0].projectKey;
+    }
+    await this.loadChannels();
   }
 
-  private async loadChannels(): Promise<void> {
+  async onProjectChange(): Promise<void> {
+    this.channels = [];
+    await this.loadChannels();
+  }
+
+  async loadChannels(): Promise<void> {
     const tenantId = this.store.activeTenantId();
-    if (!tenantId || !this.selectedProjectKey) return;
+    if (!tenantId || !this.selectedProjectKey) {
+      return;
+    }
     this.loading = true;
     try {
       this.channels = await this.api.listChannels(tenantId, this.selectedProjectKey);
@@ -220,38 +306,99 @@ export class ChannelsComponent implements OnInit {
     }
   }
 
-  openAddModal(): void {
-    this.newBotToken = "";
-    this.addError = "";
-    this.webhookUrl = "";
+  openAddModal(kind: ChannelKind): void {
+    this.channelKind = kind;
     this.showAddModal = true;
+    this.adding = false;
+    this.addError = "";
+    this.createdWebhookUrl = "";
+    this.telegramForm = { label: "", botToken: "" };
+    this.whatsappForm = {
+      label: "",
+      accessToken: "",
+      phoneNumberId: "",
+      businessAccountId: "",
+      verifyToken: "",
+      appSecret: "",
+      displayPhoneNumber: "",
+    };
+  }
+
+  closeModal(): void {
+    this.showAddModal = false;
+  }
+
+  isChannelFormValid(): boolean {
+    if (this.channelKind === "telegram") {
+      return this.telegramForm.botToken.trim().length > 10;
+    }
+    return (
+      this.whatsappForm.accessToken.trim().length > 10
+      && this.whatsappForm.phoneNumberId.trim().length > 3
+      && this.whatsappForm.verifyToken.trim().length > 7
+    );
   }
 
   async addChannel(): Promise<void> {
     const tenantId = this.store.activeTenantId();
-    if (!tenantId || !this.selectedProjectKey || !this.newBotToken.trim()) return;
+    if (!tenantId || !this.selectedProjectKey || !this.isChannelFormValid()) {
+      return;
+    }
+
     this.adding = true;
     this.addError = "";
+    this.createdWebhookUrl = "";
     try {
-      const result = await this.api.createTelegramChannel(tenantId, this.selectedProjectKey, this.newBotToken.trim());
-      this.webhookUrl = result.webhookUrl;
+      const channel = await this.api.createChannel(
+        tenantId,
+        this.selectedProjectKey,
+        this.channelKind === "telegram"
+          ? {
+              kind: "telegram",
+              label: this.telegramForm.label.trim() || undefined,
+              botToken: this.telegramForm.botToken.trim(),
+            }
+          : {
+              kind: "whatsapp",
+              label: this.whatsappForm.label.trim() || undefined,
+              accessToken: this.whatsappForm.accessToken.trim(),
+              phoneNumberId: this.whatsappForm.phoneNumberId.trim(),
+              businessAccountId: this.whatsappForm.businessAccountId.trim() || undefined,
+              verifyToken: this.whatsappForm.verifyToken.trim(),
+              appSecret: this.whatsappForm.appSecret.trim() || undefined,
+              displayPhoneNumber: this.whatsappForm.displayPhoneNumber.trim() || undefined,
+            }
+      );
+      this.createdWebhookUrl = channel.webhookUrl ?? "";
       await this.loadChannels();
-      setTimeout(() => { this.showAddModal = false; }, 2000);
-    } catch (err: unknown) {
-      this.addError = (err as { message?: string }).message ?? "Failed to connect bot. Check the token and try again.";
+      setTimeout(() => {
+        this.closeModal();
+      }, 1200);
+    } catch (error: unknown) {
+      this.addError = (error as { message?: string }).message ?? "Failed to connect channel.";
     } finally {
       this.adding = false;
     }
   }
 
-  async confirmDelete(ch: ChannelItem): Promise<void> {
-    if (!confirm(`Remove this ${ch.kind} channel? Messages will no longer be received.`)) return;
+  channelSummary(channel: ChannelItem): string {
+    if (channel.kind === "telegram") {
+      return "Messages persist into the same conversation history and bot runtime.";
+    }
+    return channel.phoneNumber
+      ? `Meta Cloud API bound to ${channel.phoneNumber}.`
+      : "Meta Cloud API channel ready for webhook verification.";
+  }
+
+  async confirmDelete(channel: ChannelItem): Promise<void> {
     const tenantId = this.store.activeTenantId();
-    if (!tenantId) return;
-    this.deleting = ch.id;
+    if (!tenantId || !confirm(`Remove this ${channel.kind} channel?`)) {
+      return;
+    }
+    this.deleting = channel.id;
     try {
-      await this.api.deleteChannel(tenantId, this.selectedProjectKey, ch.id);
-      this.channels = this.channels.filter(c => c.id !== ch.id);
+      await this.api.deleteChannel(tenantId, this.selectedProjectKey, channel.id);
+      this.channels = this.channels.filter((item) => item.id !== channel.id);
     } finally {
       this.deleting = "";
     }

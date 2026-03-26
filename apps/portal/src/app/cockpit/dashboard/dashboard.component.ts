@@ -10,15 +10,6 @@ import { Project, IngestionItem, SatisfactionStats } from "../../core/models";
   standalone: true,
   imports: [RouterModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <strong>Dashboard</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <a class="ck-btn ck-btn--primary ck-btn--sm" routerLink="/app/bots/new">+ New Bot</a>
-      </div>
-    </div>
-
     <div class="ck-content">
       <!-- Page header -->
       <div class="ck-page-header">
@@ -29,6 +20,9 @@ import { Project, IngestionItem, SatisfactionStats } from "../../core/models";
           <p class="ck-page-header__sub">
             {{ store.activeTenant()?.name ?? 'Your workspace' }} · Platform overview
           </p>
+        </div>
+        <div class="ck-page-header__actions">
+          <a class="ck-btn ck-btn--primary" routerLink="/app/bots/new">+ New Bot</a>
         </div>
       </div>
 
@@ -57,7 +51,12 @@ import { Project, IngestionItem, SatisfactionStats } from "../../core/models";
         @if (csat) {
           <div class="ck-stat">
             <div class="ck-stat__label">Avg CSAT</div>
-            <div class="ck-stat__value" [style.color]="csatColor(csat.avg)">{{ csat.avg.toFixed(1) }} ★</div>
+            <div
+              class="ck-stat__value"
+              [class.ck-score--success]="csat.avg >= 4"
+              [class.ck-score--warning]="csat.avg >= 3 && csat.avg < 4"
+              [class.ck-score--danger]="csat.avg < 3"
+            >{{ csat.avg.toFixed(1) }} ★</div>
             <div class="ck-stat__delta">{{ csat.total }} ratings</div>
           </div>
         }
@@ -139,7 +138,7 @@ import { Project, IngestionItem, SatisfactionStats } from "../../core/models";
                           {{ job.status }}
                         </span>
                       </td>
-                      <td style="color: var(--ck-text-muted); font-size: 0.78rem;">
+                      <td class="ck-auto-010">
                         {{ job.createdAt | date: 'MMM d, HH:mm' }}
                       </td>
                     </tr>
@@ -162,28 +161,28 @@ import { Project, IngestionItem, SatisfactionStats } from "../../core/models";
           <div class="ck-card__header">
             <p class="ck-card__title">Quick Actions</p>
           </div>
-          <div style="display: grid; gap: 8px;">
-            <a class="ck-btn ck-btn--secondary" routerLink="/app/bots/new" style="justify-content: flex-start;">
+          <div class="ck-auto-138">
+            <a class="ck-btn ck-btn--secondary ck-auto-139" routerLink="/app/bots/new" >
               <span>+</span> Create new bot
             </a>
             @if (projects.length > 0) {
-              <a class="ck-btn ck-btn--secondary" [routerLink]="['/app/bots', projects[0].projectKey, 'test']" style="justify-content: flex-start;">
+              <a class="ck-btn ck-btn--secondary ck-auto-139" [routerLink]="['/app/bots', projects[0].projectKey, 'test']" >
                 <span>▷</span> Test bot playground
               </a>
             }
-            <a class="ck-btn ck-btn--secondary" routerLink="/app/knowledge" style="justify-content: flex-start;">
+            <a class="ck-btn ck-btn--secondary ck-auto-139" routerLink="/app/knowledge" >
               <span>◫</span> Add knowledge source
             </a>
-            <a class="ck-btn ck-btn--secondary" routerLink="/app/conversations" style="justify-content: flex-start;">
+            <a class="ck-btn ck-btn--secondary ck-auto-139" routerLink="/app/conversations" >
               <span>◎</span> View conversations
             </a>
-            <a class="ck-btn ck-btn--secondary" routerLink="/app/analytics" style="justify-content: flex-start;">
+            <a class="ck-btn ck-btn--secondary ck-auto-139" routerLink="/app/analytics" >
               <span>▣</span> Check analytics
             </a>
-            <a class="ck-btn ck-btn--secondary" routerLink="/app/settings/members" style="justify-content: flex-start;">
+            <a class="ck-btn ck-btn--secondary ck-auto-139" routerLink="/app/settings/members" >
               <span>◎</span> Invite team member
             </a>
-            <a class="ck-btn ck-btn--secondary" routerLink="/app/developers" style="justify-content: flex-start;">
+            <a class="ck-btn ck-btn--secondary ck-auto-139" routerLink="/app/developers" >
               <span>⌗</span> Get embed snippet
             </a>
           </div>
@@ -194,26 +193,26 @@ import { Project, IngestionItem, SatisfactionStats } from "../../core/models";
           <div class="ck-card__header">
             <p class="ck-card__title">Platform Status</p>
           </div>
-          <div style="display: grid; gap: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.84rem; color: var(--ck-text-soft);">API</span>
+          <div class="ck-auto-021">
+            <div class="ck-auto-140">
+              <span class="ck-auto-141">API</span>
               <span class="ck-badge ck-badge--success"><span class="ck-dot"></span> Operational</span>
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.84rem; color: var(--ck-text-soft);">Widget CDN</span>
+            <div class="ck-auto-140">
+              <span class="ck-auto-141">Widget CDN</span>
               <span class="ck-badge ck-badge--success"><span class="ck-dot"></span> Operational</span>
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.84rem; color: var(--ck-text-soft);">Ingest Worker</span>
+            <div class="ck-auto-140">
+              <span class="ck-auto-141">Ingest Worker</span>
               <span class="ck-badge ck-badge--success"><span class="ck-dot"></span> Operational</span>
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.84rem; color: var(--ck-text-soft);">Knowledge Search</span>
+            <div class="ck-auto-140">
+              <span class="ck-auto-141">Knowledge Search</span>
               <span class="ck-badge ck-badge--success"><span class="ck-dot"></span> Operational</span>
             </div>
           </div>
           <div class="ck-divider"></div>
-          <p style="font-size: 0.78rem; color: var(--ck-text-muted); margin: 0;">
+          <p class="ck-auto-142">
             All systems nominal · Updated just now
           </p>
         </div>
@@ -270,9 +269,9 @@ export class DashboardComponent implements OnInit {
   }
 
   csatColor(score: number): string {
-    if (score >= 4) return "var(--ck-green, #3fb950)";
-    if (score >= 3) return "var(--ck-gold, #c29a52)";
-    return "var(--ck-red, #f85149)";
+    if (score >= 4) return "var(--ck-success, #10b981)";
+    if (score >= 3) return "var(--ck-accent, #8b5cf6)";
+    return "var(--ck-danger, #ef4444)";
   }
 
   statusBadgeClass(status?: string): string {

@@ -4,24 +4,12 @@
 
 ### `GET /v1/public/platform`
 
-- Use: load public Talkaris branding, SEO defaults and the demo widget configuration.
-- Response:
-  - `platform`
-  - `demo`
+- Returns Talkaris public branding, SEO defaults and demo configuration.
 
 ### `POST /v1/public/access-requests`
 
-- Use: reviewed public sign-up.
-- Input:
-  - `name`
-  - `company`
-  - `email`
-  - `phone?`
-  - `message?`
-  - `requestedTenantName?`
-- Guards:
-  - stricter public email validation
-  - IP rate limiting
+- Creates a reviewed public access request.
+- Rate limited by IP.
 
 ## Auth
 
@@ -31,18 +19,20 @@
 ### `POST /v1/auth/password/request-reset`
 ### `POST /v1/auth/password/reset`
 
-- Cookie-based auth for the Talkaris portal.
-- `login`, `request-reset` and `reset` are IP rate limited.
+- Cookie-based portal auth.
 
 ## Tenant console
 
-All tenant routes require session auth and tenant membership.
+All tenant routes require session auth plus tenant membership.
 
 ### `GET /v1/portal/tenants`
 ### `GET /v1/portal/tenants/:tenantId/overview`
 ### `GET /v1/portal/tenants/:tenantId/projects`
 ### `POST /v1/portal/tenants/:tenantId/projects`
+### `GET /v1/portal/tenants/:tenantId/projects/:projectKey`
+### `PUT /v1/portal/tenants/:tenantId/projects/:projectKey`
 ### `GET /v1/portal/tenants/:tenantId/projects/:projectKey/snippet`
+### `POST /v1/portal/tenants/:tenantId/projects/:projectKey/website-integration`
 ### `GET /v1/portal/tenants/:tenantId/sources`
 ### `POST /v1/portal/tenants/:tenantId/sources`
 ### `GET /v1/portal/tenants/:tenantId/ingestions`
@@ -52,13 +42,13 @@ All tenant routes require session auth and tenant membership.
 ### `GET /v1/portal/tenants/:tenantId/conversations`
 ### `GET /v1/portal/tenants/:tenantId/conversations/:conversationId/messages`
 ### `GET /v1/portal/tenants/:tenantId/analytics/summary?projectKey=...`
+### `GET /v1/portal/tenants/:tenantId/analytics/satisfaction?projectKey=...`
+### `GET /v1/portal/tenants/:tenantId/analytics/rag-quality?projectKey=...&period=7d|30d|90d`
+### `GET /v1/portal/tenants/:tenantId/analytics/trends?projectKey=...&period=7d|30d|90d`
 
 ## Superadmin
 
-All superadmin routes accept:
-
-- session auth with `platformRole = superadmin`, or
-- `Authorization: Bearer <ADMIN_BEARER_TOKEN>` for internal operations
+All superadmin routes accept session auth with `platformRole = superadmin` or the internal ops bearer token.
 
 ### `GET /v1/admin/overview`
 ### `GET /v1/admin/platform-settings`
@@ -71,35 +61,7 @@ All superadmin routes accept:
 ### `POST /v1/admin/users`
 ### `POST /v1/admin/memberships`
 
-## Platform settings payload
-
-Global Talkaris fields now include:
-
-- `brandName`
-- `legalName`
-- `tagline`
-- `summary`
-- `supportEmail`
-- `websiteUrl`
-- `productDomain`
-- `portalBaseUrl`
-- `apiBaseUrl`
-- `widgetBaseUrl`
-- `developedBy`
-- `demoProjectKey`
-- `demoSiteKey`
-- `defaultLocale`
-- `supportedLocales[]`
-- `seoTitle`
-- `seoDescription`
-- `seoKeywords[]`
-- `seoImageUrl`
-- `organizationName`
-- `contactEmail`
-- `heroPoints[]`
-- `featureFlags`
-
-## Widget and legacy compatibility
+## Widget contract
 
 ### `GET /v1/widget/config/:siteKey`
 ### `POST /v1/widget/sessions`
@@ -107,15 +69,30 @@ Global Talkaris fields now include:
 ### `POST /v1/widget/leads`
 ### `POST /v1/widget/events`
 
-- Widget embed now supports `window.TalkarisWidgetConfig`.
-- Legacy aliases remain accepted during the transition.
+- The public embed contract is canonical and unique:
+  - `window.TalkarisWidgetConfig = { siteKey, apiBase, widgetBaseUrl, assetVersion? }`
+- The loader only accepts `window.TalkarisWidgetConfig`.
+- `POST /v1/widget/messages` returns grounded `message`, `citations`, `confidence`, optional `cta`, and optional structured `suggestions`.
 
-## Pending items
+## Website-first integration contract
 
-- Add contract-level examples for rate-limited responses and validation errors.
-- Add explicit pagination to larger list endpoints.
-- Version the API docs if the backoffice is exposed to third parties.
+### `POST /v1/portal/tenants/:tenantId/projects/:projectKey/website-integration`
 
-## Recommended next step
+- Request:
+  - `baseUrl`
+- Response:
+  - `detectedMode`
+  - `sourceKey`
+  - `entryUrl`
+  - `allowedDomains`
+  - `ingestionJobId`
+  - `snippet`
 
-Turn these contracts into automated smoke tests and run them after migrations and before every production deployment of `talkaris.com`.
+- Behaviour:
+  - normalizes the public website URL
+  - detects `robots.txt` sitemap declarations first
+  - falls back to `/sitemap.xml`, then `/sitemap_index.xml`
+  - if no sitemap exists, provisions a canonical `html` source rooted at the website URL
+  - updates `allowedDomains`
+  - queues ingestion automatically
+  - returns the canonical embed snippet immediately

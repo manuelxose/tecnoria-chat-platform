@@ -64,14 +64,22 @@ export interface CTAConfig {
 }
 
 export interface WidgetTheme {
+  presetKey?: "indigo" | "violet" | "midnight" | "aurora";
   accentColor: string;
   surfaceColor: string;
   textColor: string;
   launcherLabel: string;
+  launcherEyebrow?: string;
+  launcherIcon?: string;
+  launcherShape?: "pill" | "rounded" | "compact";
+  buttonStyle?: "solid" | "glass" | "outline";
+  botCopy?: string;
   logoUrl?: string;
   removeBranding?: boolean;
   proactiveMessage?: string;
   proactiveDelaySeconds?: number;
+  composerPlaceholder?: string;
+  sendButtonLabel?: string;
 }
 
 export interface LeadSinkConfig {

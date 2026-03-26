@@ -9,43 +9,35 @@ import { PortalSettings } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <a routerLink="/admin/overview" style="color: var(--ck-text-muted); text-decoration: none;">Superadmin</a>
-        <span>›</span>
-        <strong>Platform Settings</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="discard()">Discard</button>
-        <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="save()" [disabled]="saving">
-          {{ saving ? 'Saving…' : 'Save Changes' }}
-        </button>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Platform Settings</h1>
           <p class="ck-page-header__sub">Global branding, SEO and infrastructure configuration</p>
         </div>
+        <div class="ck-page-header__actions">
+          <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="discard()">Discard</button>
+          <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="save()" [disabled]="saving">
+            {{ saving ? 'Saving…' : 'Save Changes' }}
+          </button>
+        </div>
       </div>
 
       @if (saveSuccess) {
-        <div class="ck-alert ck-alert--success" style="margin-bottom: 16px;">Settings saved successfully.</div>
+        <div class="ck-alert ck-alert--success ck-auto-016">Settings saved successfully.</div>
       }
       @if (saveError) {
-        <div class="ck-alert ck-alert--danger" style="margin-bottom: 16px;">{{ saveError }}</div>
+        <div class="ck-alert ck-alert--danger ck-auto-016">{{ saveError }}</div>
       }
 
       @if (loading) {
         <div class="ck-card">
           @for (i of [1,2,3,4,5]; track i) {
-            <div class="ck-skeleton" style="height: 44px; margin-bottom: 10px;"></div>
+            <div class="ck-skeleton ck-auto-017"></div>
           }
         </div>
       } @else {
-        <div style="display: grid; gap: 16px; max-width: 800px;">
+        <div class="ck-auto-018">
           <!-- Brand -->
           <div class="ck-card">
             <div class="ck-card__header">

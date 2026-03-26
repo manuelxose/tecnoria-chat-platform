@@ -1,5 +1,5 @@
 import { Component, OnInit, effect } from "@angular/core";
-import { Router, RouterModule } from "@angular/router";
+import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { CockpitStore } from "../cockpit-store.service";
 import { PortalApiService } from "../../core/portal-api.service";
@@ -35,9 +35,9 @@ import { ConversationItem } from "../../core/models";
       <div class="ck-toolbar">
         <div class="ck-search-wrap">
           <span class="ck-search-icon">⌕</span>
-          <input class="ck-input ck-search" type="text" placeholder="Filter by project..." [(ngModel)]="searchQuery" />
+          <input class="ck-input ck-search" type="text" placeholder="Filter by bot, contact or excerpt..." [(ngModel)]="searchQuery" />
         </div>
-        <select class="ck-select" style="width: auto; min-width: 160px;" [(ngModel)]="filterProject">
+        <select class="ck-select ck-auto-132" [(ngModel)]="filterProject">
           <option value="">All bots</option>
           @for (key of projectKeys; track key) {
             <option [value]="key">{{ key }}</option>
@@ -48,7 +48,7 @@ import { ConversationItem } from "../../core/models";
       @if (loading) {
         <div class="ck-card">
           @for (i of [1,2,3,4,5]; track i) {
-            <div class="ck-skeleton" style="height: 44px; margin-bottom: 8px;"></div>
+            <div class="ck-skeleton ck-auto-031"></div>
           }
         </div>
       } @else if (filtered.length > 0) {
@@ -58,24 +58,40 @@ import { ConversationItem } from "../../core/models";
               <tr>
                 <th>Conversation ID</th>
                 <th>Bot</th>
+                <th>Channel</th>
                 <th>Messages</th>
-                <th>Last message</th>
+                <th>Preview</th>
                 <th>Started</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               @for (conv of filtered; track conv.id) {
-                <tr style="cursor: pointer;" (click)="open(conv)">
+                <tr class="ck-auto-133" (click)="open(conv)">
                   <td class="ck-table__cell--mono">{{ conv.id.slice(0, 8) }}…</td>
                   <td>
-                    <span class="ck-badge ck-badge--accent">{{ conv.projectKey }}</span>
+                    <div class="ck-stack-xs">
+                      <span class="ck-badge ck-badge--accent">{{ conv.projectKey }}</span>
+                      @if (conv.contactLabel) {
+                        <span class="ck-text-xs ck-text-muted">{{ conv.contactLabel }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="ck-badge" [class]="channelBadge(conv.channelKind)">
+                      {{ conv.channelKind || "widget" }}
+                    </span>
                   </td>
                   <td>{{ conv.messageCount }}</td>
-                  <td style="color: var(--ck-text-muted); font-size: 0.8rem;">
-                    {{ conv.lastMessageAt | date: 'MMM d, HH:mm' }}
+                  <td class="ck-table__cell--wrap">
+                    <div class="ck-stack-xs">
+                      <span>{{ conv.lastMessagePreview || "No excerpt available yet." }}</span>
+                      @if (conv.lastMessageAt) {
+                        <span class="ck-text-xs ck-text-muted">{{ conv.lastMessageAt | date: 'MMM d, HH:mm' }}</span>
+                      }
+                    </div>
                   </td>
-                  <td style="color: var(--ck-text-muted); font-size: 0.8rem;">
+                  <td class="ck-auto-038">
                     {{ conv.createdAt | date: 'MMM d, HH:mm' }}
                   </td>
                   <td>
@@ -114,7 +130,11 @@ export class ConversationsComponent implements OnInit {
 
   get filtered(): ConversationItem[] {
     return this.conversations.filter((c) => {
-      const matchSearch = !this.searchQuery || c.projectKey.toLowerCase().includes(this.searchQuery.toLowerCase());
+      const q = this.searchQuery.toLowerCase();
+      const matchSearch = !q
+        || c.projectKey.toLowerCase().includes(q)
+        || (c.contactLabel ?? "").toLowerCase().includes(q)
+        || (c.lastMessagePreview ?? "").toLowerCase().includes(q);
       const matchProject = !this.filterProject || c.projectKey === this.filterProject;
       return matchSearch && matchProject;
     });
@@ -123,8 +143,10 @@ export class ConversationsComponent implements OnInit {
   constructor(
     private readonly store: CockpitStore,
     private readonly api: PortalApiService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {
+    this.filterProject = this.route.snapshot.queryParamMap.get("projectKey") ?? "";
     effect(() => {
       const id = this.store.activeTenantId();
       if (id) this.load(id);
@@ -147,5 +169,18 @@ export class ConversationsComponent implements OnInit {
 
   open(conv: ConversationItem): void {
     this.router.navigate(["/app/conversations", conv.id]);
+  }
+
+  channelBadge(channel?: string | null): string {
+    switch (channel) {
+      case "telegram":
+        return "ck-badge ck-badge--info";
+      case "whatsapp":
+        return "ck-badge ck-badge--success";
+      case "other":
+        return "ck-badge ck-badge--warning";
+      default:
+        return "ck-badge ck-badge--default";
+    }
   }
 }

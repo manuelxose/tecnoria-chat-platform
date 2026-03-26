@@ -28,24 +28,15 @@ const EVENT_LABELS: Record<string, string> = {
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <strong>Analytics</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="exportOpen = !exportOpen">↓ Export</button>
-      </div>
-    </div>
-
     <!-- Export modal -->
     @if (exportOpen) {
-      <div style="position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;" (click)="exportOpen = false">
-        <div class="ck-card" style="width: 340px; background: var(--ck-surface-raised);" (click)="$event.stopPropagation()">
+      <div class="ck-auto-040" (click)="exportOpen = false">
+        <div class="ck-card ck-auto-041" (click)="$event.stopPropagation()">
           <div class="ck-card__header">
             <p class="ck-card__title">Export Data</p>
             <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="exportOpen = false">✕</button>
           </div>
-          <div style="display: grid; gap: 10px;">
+          <div class="ck-auto-021">
             <button class="ck-btn ck-btn--secondary" (click)="exportData('conversations')" [disabled]="exporting">
               ↓ Conversations CSV
             </button>
@@ -57,7 +48,7 @@ const EVENT_LABELS: Record<string, string> = {
             </button>
           </div>
           @if (exportMsg) {
-            <p style="margin-top: 10px; font-size: 0.82rem; color: var(--ck-text-muted);">{{ exportMsg }}</p>
+            <p class="ck-auto-042">{{ exportMsg }}</p>
           }
         </div>
       </div>
@@ -70,7 +61,8 @@ const EVENT_LABELS: Record<string, string> = {
           <p class="ck-page-header__sub">Usage metrics across your bots</p>
         </div>
         <div class="ck-page-header__actions">
-          <select class="ck-select" style="min-width: 200px;" [(ngModel)]="selectedProjectKey" (ngModelChange)="onProjectChange($event)">
+          <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="exportOpen = !exportOpen">↓ Export</button>
+          <select class="ck-select ck-auto-043" [(ngModel)]="selectedProjectKey" (ngModelChange)="onProjectChange($event)">
             @for (p of projects; track p.projectKey) {
               <option [value]="p.projectKey">{{ p.botName }} · {{ p.projectKey }}</option>
             }
@@ -79,7 +71,7 @@ const EVENT_LABELS: Record<string, string> = {
       </div>
 
       <!-- Tabs -->
-      <div style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--ck-border); padding-bottom: 0;">
+      <div class="ck-auto-044">
         <button class="ck-tab" [class.is-active]="activeTab === 'usage'" (click)="activeTab = 'usage'">Usage</button>
         <button class="ck-tab" [class.is-active]="activeTab === 'satisfaction'" (click)="switchSatisfaction()">Satisfaction</button>
         <button class="ck-tab" [class.is-active]="activeTab === 'quality'" (click)="switchQuality()">Knowledge Quality</button>
@@ -98,7 +90,7 @@ const EVENT_LABELS: Record<string, string> = {
         @if (loading) {
           <div class="ck-stats">
             @for (i of [1,2,3,4,5,6,7,8]; track i) {
-              <div class="ck-stat"><div class="ck-skeleton" style="height: 60px;"></div></div>
+              <div class="ck-stat"><div class="ck-skeleton ck-auto-011"></div></div>
             }
           </div>
         } @else if (summary) {
@@ -113,7 +105,7 @@ const EVENT_LABELS: Record<string, string> = {
             }
           </div>
 
-          <div class="ck-grid-two" style="margin-top: 24px;">
+          <div class="ck-grid-two ck-auto-045">
             <!-- Unanswered questions -->
             <div class="ck-card">
               <div class="ck-card__header">
@@ -135,7 +127,7 @@ const EVENT_LABELS: Record<string, string> = {
                     <tbody>
                       @for (item of summary.unanswered.slice(0, 10); track item.message) {
                         <tr>
-                          <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="item.message">
+                          <td class="ck-auto-046" [title]="item.message">
                             {{ item.message }}
                           </td>
                           <td>
@@ -147,7 +139,7 @@ const EVENT_LABELS: Record<string, string> = {
                   </table>
                 </div>
               } @else {
-                <div class="ck-empty" style="padding: 24px;">
+                <div class="ck-empty ck-auto-047">
                   <p class="ck-empty__title">No unanswered questions</p>
                   <p class="ck-empty__sub">Your bot is answering everything!</p>
                 </div>
@@ -163,19 +155,19 @@ const EVENT_LABELS: Record<string, string> = {
                 </div>
               </div>
               @if (summary.leads.length > 0) {
-                <div style="display: grid; gap: 10px;">
+                <div class="ck-auto-021">
                   @for (lead of summary.leads; track lead.deliveryStatus) {
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ck-border);">
+                    <div class="ck-auto-048">
                       <span class="ck-badge" [class]="leadBadge(lead.deliveryStatus)">
                         <span class="ck-dot"></span>
                         {{ lead.deliveryStatus }}
                       </span>
-                      <strong style="font-size: 1.1rem; font-weight: 700;">{{ lead.total }}</strong>
+                      <strong class="ck-auto-049">{{ lead.total }}</strong>
                     </div>
                   }
                 </div>
               } @else {
-                <div class="ck-empty" style="padding: 24px;">
+                <div class="ck-empty ck-auto-047">
                   <p class="ck-empty__title">No leads yet</p>
                   <p class="ck-empty__sub">Lead submissions will appear here.</p>
                 </div>
@@ -183,8 +175,8 @@ const EVENT_LABELS: Record<string, string> = {
 
               <div class="ck-divider"></div>
 
-              <div style="background: var(--ck-accent-soft); border-radius: var(--ck-radius); padding: 12px;">
-                <p style="font-size: 0.78rem; color: var(--ck-accent-strong); margin: 0; line-height: 1.5;">
+              <div class="ck-auto-050">
+                <p class="ck-auto-051">
                   <strong>Pro tip:</strong> Configure a webhook URL in your bot settings to receive leads in real time.
                 </p>
               </div>
@@ -197,15 +189,20 @@ const EVENT_LABELS: Record<string, string> = {
         @if (csatLoading) {
           <div class="ck-stats">
             @for (i of [1,2,3]; track i) {
-              <div class="ck-stat"><div class="ck-skeleton" style="height: 80px;"></div></div>
+              <div class="ck-stat"><div class="ck-skeleton ck-auto-052"></div></div>
             }
           </div>
         } @else if (csat) {
           <!-- Score overview -->
-          <div class="ck-stats" style="margin-bottom: 24px;">
+          <div class="ck-stats ck-auto-053">
             <div class="ck-stat">
               <div class="ck-stat__label">Average Score</div>
-              <div class="ck-stat__value" [style.color]="csatColor(csat.avg)">{{ csat.avg.toFixed(1) }} ★</div>
+              <div
+                class="ck-stat__value"
+                [class.ck-score--success]="csat.avg >= 4"
+                [class.ck-score--warning]="csat.avg >= 3 && csat.avg < 4"
+                [class.ck-score--danger]="csat.avg < 3"
+              >{{ csat.avg.toFixed(1) }} ★</div>
               <div class="ck-stat__delta">out of 5.0</div>
             </div>
             <div class="ck-stat">
@@ -215,7 +212,12 @@ const EVENT_LABELS: Record<string, string> = {
             </div>
             <div class="ck-stat">
               <div class="ck-stat__label">Satisfaction Rate</div>
-              <div class="ck-stat__value" [style.color]="csatColor(csat.avg)">
+              <div
+                class="ck-stat__value"
+                [class.ck-score--success]="csat.avg >= 4"
+                [class.ck-score--warning]="csat.avg >= 3 && csat.avg < 4"
+                [class.ck-score--danger]="csat.avg < 3"
+              >
                 {{ csat.total ? ((((csat.distribution['4'] ?? 0) + (csat.distribution['5'] ?? 0)) / csat.total) * 100).toFixed(0) + '%' : '—' }}
               </div>
               <div class="ck-stat__delta">scored 4 or 5 stars</div>
@@ -228,14 +230,14 @@ const EVENT_LABELS: Record<string, string> = {
               <div class="ck-card__header">
                 <p class="ck-card__title">Score Distribution</p>
               </div>
-              <div style="display: grid; gap: 10px;">
+              <div class="ck-auto-021">
                 @for (star of [5,4,3,2,1]; track star) {
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 0.82rem; width: 42px; color: var(--ck-text-soft);">{{ star }} ★</span>
-                    <div style="flex: 1; background: var(--ck-surface-high); border-radius: 4px; height: 10px; overflow: hidden;">
-                      <div [style.width]="barWidth(star)" [style.background]="csatColor(star)" style="height: 100%; border-radius: 4px; transition: width 0.4s;"></div>
+                  <div class="ck-auto-054">
+                    <span class="ck-auto-055">{{ star }} ★</span>
+                    <div class="ck-auto-056">
+                      <progress class="ck-progress ck-auto-057" [value]="barValue(star)" max="100"></progress>
                     </div>
-                    <span style="font-size: 0.78rem; color: var(--ck-text-muted); width: 32px; text-align: right;">{{ csat.distribution[star] ?? 0 }}</span>
+                    <span class="ck-auto-058">{{ csat.distribution[star] ?? 0 }}</span>
                   </div>
                 }
               </div>
@@ -247,19 +249,24 @@ const EVENT_LABELS: Record<string, string> = {
                 <p class="ck-card__title">Recent Comments</p>
               </div>
               @if (csat.recentComments.length > 0) {
-                <div style="display: grid; gap: 12px;">
+                <div class="ck-auto-059">
                   @for (c of csat.recentComments.slice(0, 6); track c.date) {
-                    <div style="padding: 10px; background: var(--ck-surface-high); border-radius: var(--ck-radius-sm);">
-                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                        <span style="font-size: 0.84rem;" [style.color]="csatColor(c.score)">{{ '★'.repeat(c.score) }}{{ '☆'.repeat(5 - c.score) }}</span>
-                        <span style="font-size: 0.72rem; color: var(--ck-text-muted);">{{ c.date | slice:0:10 }}</span>
+                    <div class="ck-auto-060">
+                      <div class="ck-auto-061">
+                        <span
+                          class="ck-auto-062"
+                          [class.ck-score--success]="c.score >= 4"
+                          [class.ck-score--warning]="c.score === 3"
+                          [class.ck-score--danger]="c.score <= 2"
+                        >{{ '★'.repeat(c.score) }}{{ '☆'.repeat(5 - c.score) }}</span>
+                        <span class="ck-auto-063">{{ c.date | slice:0:10 }}</span>
                       </div>
-                      <p style="margin: 0; font-size: 0.82rem; color: var(--ck-text-soft); line-height: 1.5;">{{ c.comment }}</p>
+                      <p class="ck-auto-064">{{ c.comment }}</p>
                     </div>
                   }
                 </div>
               } @else {
-                <div class="ck-empty" style="padding: 24px;">
+                <div class="ck-empty ck-auto-047">
                   <p class="ck-empty__title">No comments yet</p>
                   <p class="ck-empty__sub">Users can leave comments when rating conversations.</p>
                 </div>
@@ -279,7 +286,7 @@ const EVENT_LABELS: Record<string, string> = {
       } @else if (activeTab === 'quality') {
 
         <!-- Period selector -->
-        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+        <div class="ck-auto-065">
           @for (p of ['7d', '30d', '90d']; track p) {
             <button class="ck-btn ck-btn--ghost ck-btn--sm"
                     [class.ck-btn--secondary]="ragPeriod === p"
@@ -290,21 +297,31 @@ const EVENT_LABELS: Record<string, string> = {
         @if (ragLoading) {
           <div class="ck-stats">
             @for (i of [1,2,3,4]; track i) {
-              <div class="ck-stat"><div class="ck-skeleton" style="height: 80px;"></div></div>
+              <div class="ck-stat"><div class="ck-skeleton ck-auto-052"></div></div>
             }
           </div>
         } @else if (rag) {
-          <div class="ck-stats" style="margin-bottom: 24px;">
+          <div class="ck-stats ck-auto-053">
             <div class="ck-stat">
               <div class="ck-stat__label">Coverage Score</div>
-              <div class="ck-stat__value" [style.color]="coverageColor(rag.coverageScore)">
+              <div
+                class="ck-stat__value"
+                [class.ck-score--success]="rag.coverageScore != null && rag.coverageScore >= 85"
+                [class.ck-score--warning]="rag.coverageScore != null && rag.coverageScore >= 60 && rag.coverageScore < 85"
+                [class.ck-score--danger]="rag.coverageScore != null && rag.coverageScore < 60"
+              >
                 {{ rag.coverageScore != null ? rag.coverageScore + '%' : '—' }}
               </div>
               <div class="ck-stat__delta">% answered</div>
             </div>
             <div class="ck-stat">
               <div class="ck-stat__label">Fallback Rate</div>
-              <div class="ck-stat__value" [style.color]="fallbackColor(rag.fallbackRate)">{{ rag.fallbackRate }}%</div>
+              <div
+                class="ck-stat__value"
+                [class.ck-score--success]="rag.fallbackRate <= 10"
+                [class.ck-score--warning]="rag.fallbackRate > 10 && rag.fallbackRate <= 25"
+                [class.ck-score--danger]="rag.fallbackRate > 25"
+              >{{ rag.fallbackRate }}%</div>
               <div class="ck-stat__delta">of {{ rag.totalMessages }} messages</div>
             </div>
             <div class="ck-stat">
@@ -314,7 +331,7 @@ const EVENT_LABELS: Record<string, string> = {
             </div>
             <div class="ck-stat">
               <div class="ck-stat__label">Low Confidence</div>
-              <div class="ck-stat__value" [style.color]="rag.lowConfidenceCount > 0 ? 'var(--ck-red)' : 'inherit'">{{ rag.lowConfidenceCount }}</div>
+              <div class="ck-stat__value" [class.ck-score--danger]="rag.lowConfidenceCount > 0">{{ rag.lowConfidenceCount }}</div>
               <div class="ck-stat__delta">responses below 0.3</div>
             </div>
           </div>
@@ -334,7 +351,7 @@ const EVENT_LABELS: Record<string, string> = {
                   <tbody>
                     @for (gap of rag.topGaps; track gap.question) {
                       <tr>
-                        <td style="font-size: 0.84rem;">{{ gap.question }}</td>
+                        <td class="ck-auto-062">{{ gap.question }}</td>
                         <td><span class="ck-badge ck-badge--warning">{{ gap.count }}</span></td>
                       </tr>
                     }
@@ -342,7 +359,7 @@ const EVENT_LABELS: Record<string, string> = {
                 </table>
               </div>
             } @else {
-              <div class="ck-empty" style="padding: 24px;">
+              <div class="ck-empty ck-auto-047">
                 <p class="ck-empty__title">No knowledge gaps detected</p>
                 <p class="ck-empty__sub">Your bot is covering all questions in the selected period.</p>
               </div>
@@ -361,7 +378,7 @@ const EVENT_LABELS: Record<string, string> = {
       } @else if (activeTab === 'trends') {
 
         <!-- Period selector -->
-        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+        <div class="ck-auto-065">
           @for (p of ['7d', '30d', '90d']; track p) {
             <button class="ck-btn ck-btn--ghost ck-btn--sm"
                     [class.ck-btn--secondary]="trendsPeriod === p"
@@ -372,22 +389,30 @@ const EVENT_LABELS: Record<string, string> = {
         @if (trendsLoading) {
           <div class="ck-stats">
             @for (i of [1,2,3,4]; track i) {
-              <div class="ck-stat"><div class="ck-skeleton" style="height: 80px;"></div></div>
+              <div class="ck-stat"><div class="ck-skeleton ck-auto-052"></div></div>
             }
           </div>
         } @else if (trends) {
           <!-- KPI cards -->
-          <div class="ck-stats" style="margin-bottom: 24px;">
+          <div class="ck-stats ck-auto-053">
             <div class="ck-stat">
               <div class="ck-stat__label">Resolution Rate</div>
-              <div class="ck-stat__value" [style.color]="coverageColor(trends.resolutionRate)">
+              <div
+                class="ck-stat__value"
+                [class.ck-score--success]="trends.resolutionRate != null && trends.resolutionRate >= 85"
+                [class.ck-score--warning]="trends.resolutionRate != null && trends.resolutionRate >= 60 && trends.resolutionRate < 85"
+                [class.ck-score--danger]="trends.resolutionRate != null && trends.resolutionRate < 60"
+              >
                 {{ trends.resolutionRate != null ? trends.resolutionRate + '%' : '—' }}
               </div>
               <div class="ck-stat__delta">conversations resolved</div>
             </div>
             <div class="ck-stat">
               <div class="ck-stat__label">Handover Rate</div>
-              <div class="ck-stat__value" [style.color]="trends.handoverRate != null && trends.handoverRate > 20 ? 'var(--ck-gold)' : 'inherit'">
+              <div
+                class="ck-stat__value"
+                [class.ck-score--warning]="trends.handoverRate != null && trends.handoverRate > 20"
+              >
                 {{ trends.handoverRate != null ? trends.handoverRate + '%' : '—' }}
               </div>
               <div class="ck-stat__delta">escalated to agent</div>
@@ -413,8 +438,8 @@ const EVENT_LABELS: Record<string, string> = {
                   <p class="ck-card__sub">Messages per day in the selected period</p>
                 </div>
               </div>
-              <div style="overflow-x: auto; padding: 8px 0;">
-                <svg [attr.width]="sparklineWidth()" height="80" style="display: block; min-width: 100%;">
+              <div class="ck-auto-066">
+                <svg [attr.width]="sparklineWidth()" height="80" class="ck-auto-067">
                   <!-- Y-axis baseline -->
                   <line x1="0" [attr.x2]="sparklineWidth()" y1="75" y2="75"
                         stroke="var(--ck-border)" stroke-width="1"/>
@@ -444,16 +469,16 @@ const EVENT_LABELS: Record<string, string> = {
               </div>
 
               <!-- Legend -->
-              <div style="display: flex; gap: 20px; margin-top: 12px; font-size: 0.78rem; color: var(--ck-text-soft);">
-                <span style="display: flex; align-items: center; gap: 6px;">
-                  <span style="width: 12px; height: 12px; background: var(--ck-accent, #00c2a8); border-radius: 2px; display: inline-block;"></span>
+              <div class="ck-auto-068">
+                <span class="ck-auto-069">
+                  <span class="ck-auto-070"></span>
                   Messages
                 </span>
               </div>
             </div>
           } @else {
             <div class="ck-card">
-              <div class="ck-empty" style="padding: 24px;">
+              <div class="ck-empty ck-auto-047">
                 <p class="ck-empty__title">No data in this period</p>
                 <p class="ck-empty__sub">Trend data will appear as your bot handles conversations.</p>
               </div>
@@ -645,7 +670,7 @@ export class AnalyticsComponent implements OnInit {
   }
 
   sparklineFill(i: number): string {
-    return i % 2 === 0 ? "var(--ck-accent, #00c2a8)" : "var(--ck-accent-soft, rgba(0,194,168,0.6))";
+    return i % 2 === 0 ? "var(--ck-accent, #8b5cf6)" : "var(--ck-accent-soft, rgba(139,92,246,0.6))";
   }
 
   shouldShowLabel(i: number): boolean {
@@ -655,15 +680,20 @@ export class AnalyticsComponent implements OnInit {
     return i % 10 === 0;
   }
 
+  barValue(star: number): number {
+    if (!this.csat || !this.csat.total) return 0;
+    return Math.round(((this.csat.distribution[star] ?? 0) / this.csat.total) * 100);
+  }
+
   barWidth(star: number): string {
     if (!this.csat || !this.csat.total) return "0%";
     return `${Math.round(((this.csat.distribution[star] ?? 0) / this.csat.total) * 100)}%`;
   }
 
   csatColor(score: number): string {
-    if (score >= 4) return "var(--ck-green, #3fb950)";
-    if (score >= 3) return "var(--ck-gold, #c29a52)";
-    return "var(--ck-red, #f85149)";
+    if (score >= 4) return "var(--ck-success, #10b981)";
+    if (score >= 3) return "var(--ck-accent, #8b5cf6)";
+    return "var(--ck-danger, #ef4444)";
   }
 
   eventLabel(type: string): string {
@@ -672,15 +702,15 @@ export class AnalyticsComponent implements OnInit {
 
   coverageColor(score: number | null): string {
     if (score == null) return "inherit";
-    if (score >= 85) return "var(--ck-green, #3fb950)";
-    if (score >= 60) return "var(--ck-gold, #c29a52)";
-    return "var(--ck-red, #f85149)";
+    if (score >= 85) return "var(--ck-success, #10b981)";
+    if (score >= 60) return "var(--ck-accent, #8b5cf6)";
+    return "var(--ck-danger, #ef4444)";
   }
 
   fallbackColor(rate: number): string {
-    if (rate <= 10) return "var(--ck-green, #3fb950)";
-    if (rate <= 25) return "var(--ck-gold, #c29a52)";
-    return "var(--ck-red, #f85149)";
+    if (rate <= 10) return "var(--ck-success, #10b981)";
+    if (rate <= 25) return "var(--ck-accent, #8b5cf6)";
+    return "var(--ck-danger, #ef4444)";
   }
 
   leadBadge(status: string): string {

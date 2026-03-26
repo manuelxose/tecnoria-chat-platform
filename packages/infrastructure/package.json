@@ -1,0 +1,17 @@
+{
+  "name": "@tecnoria-chat/infrastructure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@tecnoria-chat/application": "0.1.0",
+    "@tecnoria-chat/domain": "0.1.0",
+    "cheerio": "^1.2.0",
+    "pg": "^8.11.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

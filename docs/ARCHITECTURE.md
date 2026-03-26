@@ -1,78 +1,66 @@
-# Current architecture
+# Talkaris architecture
 
-## Topology
+## Canonical runtime
 
-```text
-talkaris.com
-├─ /                -> apps/portal (Angular SSR + Express)
-├─ /api/*           -> apps/chat-api (Node/Express)
-└─ /widget/*        -> apps/widget (static widget server)
+Talkaris now runs from tracked source modules only.
 
-apps/ingest-worker -> processes ingestion_jobs and writes documents/chunks
-PostgreSQL         -> platform, knowledge, analytics and auth persistence
-Cloudflare         -> DNS, proxy, SSL mode and cache purge
-```
+Primary entrypoints:
 
-## Public routing model
+- `apps/chat-api/src/main.ts`
+- `apps/chat-api/src/runtime-base.ts`
+- `apps/ingest-worker/src/main.ts`
+- `apps/ingest-worker/src/runtime-base.ts`
+- `apps/widget/public/embed.js`
+- `apps/widget/public/frame.html`
+- `apps/portal/src/app/**`
 
-```text
-indexable ES routes:
-/ /funcionalidades /integraciones /casos-de-uso /faq
+No runtime source may import compiled `dist/...` artifacts.
 
-indexable EN routes:
-/en /en/features /en/integrations /en/use-cases /en/faq
+## Main surfaces
 
-noindex routes:
-/solicitar-demo /en/request-demo /login /reset-password /app /admin
-```
+### Chat API
 
-## Data model
+- Express application
+- widget runtime endpoints
+- portal endpoints
+- analytics endpoints
+- source provisioning and ingestion queueing
+- Telegram and WhatsApp channel webhooks
 
-```text
-tenant
-└─ project
-   ├─ source
-   │  └─ ingestion_job
-   ├─ document
-   │  └─ document_version
-   │     └─ chunk
-   ├─ conversation
-   │  └─ message
-   ├─ lead_event
-   └─ analytics_event
+### Ingest worker
 
-user
-└─ tenant_membership
+- consumes queued ingestion jobs
+- supports `sitemap`, `html`, `pdf`, `markdown`, `api_endpoint`, `youtube`, `notion`, `gemini_file`
+- writes normalized documents, versions and chunks
 
-platform_settings
-└─ global Talkaris branding + SEO + demo widget
+### Portal
 
-access_request
-└─ reviewed by superadmin
-```
+- tenant console
+- bot studio
+- developers surface
+- knowledge sources / ingestions / analytics
 
-## SSR and SEO flow
+### Widget
 
-1. The browser enters `talkaris.com`.
-2. `apps/portal/src/server.ts` resolves canonical host rules and private route redirects.
-3. The same server serves `robots.txt` and `sitemap.xml` from the public route registry.
-4. Angular SSR renders the page and the SEO service writes title, description, canonical, `hreflang`, OG, Twitter and JSON-LD.
-5. Public pages fetch `GET /v1/public/platform` to resolve Talkaris branding and demo widget config.
+- canonical loader: `embed.js`
+- canonical runtime config: `window.TalkarisWidgetConfig`
+- canonical frame surface: `frame.html`
 
-## Widget flow
+## Website-first provisioning
 
-1. The external application loads `embed.js`.
-2. The loader accepts `window.TalkarisWidgetConfig` plus legacy aliases.
-3. The loader creates the iframe with `frame.html`.
-4. The widget opens a session by `siteKey`, sends messages, leads and analytics to `chat-api`.
-5. Everything remains isolated by `project_id`.
+The default public website path is:
 
-## Pending items
+1. create or update a project
+2. call `POST /v1/portal/tenants/:tenantId/projects/:projectKey/website-integration`
+3. detect sitemap or fall back to root crawl
+4. create or update one canonical website source
+5. queue ingestion
+6. return the canonical snippet
 
-- Add real systemd unit templates if the final VPS rollout will not stay Docker-based.
-- Add centralised observability for `portal`, `chat-api` and `ingest-worker`.
-- Decide whether public content stays in source control or moves to a managed CMS later.
+## Shared answer pipeline
 
-## Recommended next step
+The widget and channel integrations reuse the same answer pipeline:
 
-Validate the full topology on a staging hostname with Cloudflare in front, so canonical host logic, proxied widget traffic and SMTP flows are all exercised together.
+- widget messages call `POST /v1/widget/messages`
+- channel replies are built through `buildChannelReply()`
+- assistant profile, runtime policy, suggestions and CTA logic remain aligned across website widget, Telegram and WhatsApp

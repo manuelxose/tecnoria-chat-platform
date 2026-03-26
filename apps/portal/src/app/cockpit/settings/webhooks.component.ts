@@ -37,31 +37,31 @@ const ALL_EVENTS = [
       </div>
 
       @if (secret) {
-        <div class="ck-card" style="margin-bottom: 20px; border-color: var(--ck-accent-soft);">
-          <p class="ck-card__title" style="margin-bottom: 8px;">Webhook secret — copy it now, it won't be shown again</p>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <code style="flex: 1; font-size: 0.82rem; font-family: ui-monospace; background: var(--ck-surface-high); padding: 10px 14px; border-radius: var(--ck-radius-sm); color: var(--ck-accent-strong); word-break: break-all;">{{ secret }}</code>
+        <div class="ck-card ck-auto-175">
+          <p class="ck-card__title ck-auto-176">Webhook secret — copy it now, it won't be shown again</p>
+          <div class="ck-auto-177">
+            <code class="ck-auto-200">{{ secret }}</code>
             <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="copySecret()">{{ copied ? '✓' : 'Copy' }}</button>
           </div>
         </div>
       }
 
       @if (createOpen) {
-        <div class="ck-card" style="margin-bottom: 20px;">
-          <p class="ck-card__title" style="margin-bottom: 12px;">New Webhook</p>
-          <div style="display: grid; gap: 10px; max-width: 520px;">
+        <div class="ck-card ck-auto-019">
+          <p class="ck-card__title ck-auto-033">New Webhook</p>
+          <div class="ck-auto-201">
             <input class="ck-input" placeholder="https://your-server.com/webhook" [(ngModel)]="form.url" />
             <input class="ck-input" placeholder="Description (optional)" [(ngModel)]="form.description" />
             <div>
-              <p style="font-size: 0.82rem; color: var(--ck-text-soft); margin-bottom: 6px;">Events to listen for</p>
+              <p class="ck-auto-166">Events to listen for</p>
               @for (ev of allEvents; track ev) {
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; margin-bottom: 4px; cursor: pointer;">
+                <label class="ck-auto-168">
                   <input type="checkbox" [checked]="form.events.includes(ev)" (change)="toggleEvent(ev)" />
                   {{ ev }}
                 </label>
               }
             </div>
-            <div style="display: flex; gap: 10px;">
+            <div class="ck-auto-169">
               <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="create()" [disabled]="creating || !form.url || !form.events.length">
                 {{ creating ? 'Creating…' : 'Create Webhook' }}
               </button>
@@ -85,19 +85,19 @@ const ALL_EVENTS = [
             @for (wh of webhooks; track wh.id) {
               <tr>
                 <td>
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 0.82rem; font-family: ui-monospace; color: var(--ck-text);">{{ wh.url }}</span>
+                  <div class="ck-auto-182">
+                    <span class="ck-auto-202">{{ wh.url }}</span>
                     @if (wh.description) {
-                      <span style="font-size: 0.78rem; color: var(--ck-text-muted);">{{ wh.description }}</span>
+                      <span class="ck-auto-077">{{ wh.description }}</span>
                     }
                   </div>
                 </td>
                 <td>
                   @for (ev of wh.events.slice(0, 3); track ev) {
-                    <span class="ck-badge ck-badge--default" style="margin-right: 4px; font-size: 0.72rem;">{{ ev }}</span>
+                    <span class="ck-badge ck-badge--default ck-auto-203">{{ ev }}</span>
                   }
                   @if (wh.events.length > 3) {
-                    <span style="font-size: 0.78rem; color: var(--ck-text-muted);">+{{ wh.events.length - 3 }} more</span>
+                    <span class="ck-auto-077">+{{ wh.events.length - 3 }} more</span>
                   }
                 </td>
                 <td>
@@ -106,19 +106,19 @@ const ALL_EVENTS = [
                   </span>
                 </td>
                 <td>
-                  <div style="display: flex; gap: 8px;">
+                  <div class="ck-auto-079">
                     <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="test(wh)" [disabled]="testing === wh.id">
                       {{ testing === wh.id ? '…' : 'Test' }}
                     </button>
                     <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="toggle(wh)">
                       {{ wh.active ? 'Pause' : 'Enable' }}
                     </button>
-                    <button class="ck-btn ck-btn--ghost ck-btn--sm" style="color: var(--ck-red);" (click)="remove(wh)">Delete</button>
+                    <button class="ck-btn ck-btn--ghost ck-btn--sm ck-auto-106" (click)="remove(wh)">Delete</button>
                   </div>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="4" style="text-align: center; color: var(--ck-text-muted);">No webhooks configured</td></tr>
+              <tr><td colspan="4" class="ck-auto-137">No webhooks configured</td></tr>
             }
           </tbody>
         </table>

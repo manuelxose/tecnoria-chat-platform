@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
   <title>Talkaris</title>
   <defs>
-    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
-      <stop offset="0%" stop-color="#00c2a8" />
-      <stop offset="100%" stop-color="#0f6fff" />
+    <linearGradient id="talkaris-mark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="18" fill="#081220" />
-  <path d="M16 18h32v9H37v21h-10V27H16z" fill="url(#bg)" />
+  <rect width="64" height="64" rx="18" fill="#0f172a" />
+  <circle cx="14" cy="14" r="10" fill="#6366f1" fill-opacity=".20" />
+  <circle cx="50" cy="50" r="12" fill="#8b5cf6" fill-opacity=".18" />
+  <rect x="11" y="11" width="42" height="42" rx="14" fill="#ffffff" fill-opacity=".08" stroke="#ffffff" stroke-opacity=".14" />
+  <path d="M18 20h28v8H36v18h-8V28H18z" fill="url(#talkaris-mark)" />
 </svg>

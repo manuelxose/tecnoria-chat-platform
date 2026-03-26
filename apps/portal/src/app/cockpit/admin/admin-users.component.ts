@@ -11,7 +11,7 @@ import { PortalUser, Tenant } from "../../core/models";
   template: `
     <div class="ck-topbar">
       <div class="ck-topbar__breadcrumb">
-        <a routerLink="/admin/overview" style="color: var(--ck-text-muted); text-decoration: none;">Superadmin</a>
+        <a routerLink="/admin/overview" class="ck-auto-008">Superadmin</a>
         <span>›</span>
         <strong>Users</strong>
       </div>
@@ -33,7 +33,7 @@ import { PortalUser, Tenant } from "../../core/models";
               <span class="ck-search-icon">⌕</span>
               <input class="ck-input ck-search" type="text" placeholder="Search users..." [(ngModel)]="searchQuery" />
             </div>
-            <select class="ck-select" style="width: auto; min-width: 120px;" [(ngModel)]="filterRole">
+            <select class="ck-select ck-auto-035" [(ngModel)]="filterRole">
               <option value="">All roles</option>
               <option value="superadmin">Superadmin</option>
               <option value="member">Member</option>
@@ -43,7 +43,7 @@ import { PortalUser, Tenant } from "../../core/models";
           @if (loading) {
             <div class="ck-card">
               @for (i of [1,2,3,4]; track i) {
-                <div class="ck-skeleton" style="height: 52px; margin-bottom: 8px;"></div>
+                <div class="ck-skeleton ck-auto-036"></div>
               }
             </div>
           } @else if (filtered.length > 0) {
@@ -62,7 +62,7 @@ import { PortalUser, Tenant } from "../../core/models";
                   @for (user of filtered; track user.id) {
                     <tr>
                       <td class="ck-table__cell--strong">{{ user.email }}</td>
-                      <td style="color: var(--ck-text-soft);">{{ user.displayName ?? '—' }}</td>
+                      <td class="ck-auto-037">{{ user.displayName ?? '—' }}</td>
                       <td>
                         <span class="ck-badge" [class]="roleBadge(user.platformRole)">{{ user.platformRole }}</span>
                       </td>
@@ -71,7 +71,7 @@ import { PortalUser, Tenant } from "../../core/models";
                           <span class="ck-dot"></span>{{ user.status }}
                         </span>
                       </td>
-                      <td style="color: var(--ck-text-muted); font-size: 0.8rem;">
+                      <td class="ck-auto-038">
                         {{ user.memberships.length }} workspace{{ user.memberships.length !== 1 ? 's' : '' }}
                       </td>
                     </tr>
@@ -90,17 +90,17 @@ import { PortalUser, Tenant } from "../../core/models";
         </div>
 
         <!-- Create user + membership -->
-        <div style="display: grid; gap: 16px; align-content: start;">
+        <div class="ck-auto-039">
           <!-- Create user -->
           <div class="ck-card">
             <div class="ck-card__header">
               <p class="ck-card__title">Create User</p>
             </div>
             @if (userSuccess) {
-              <div class="ck-alert ck-alert--success" style="margin-bottom: 12px;">User created.</div>
+              <div class="ck-alert ck-alert--success ck-auto-033">User created.</div>
             }
             @if (userError) {
-              <div class="ck-alert ck-alert--danger" style="margin-bottom: 12px;">{{ userError }}</div>
+              <div class="ck-alert ck-alert--danger ck-auto-033">{{ userError }}</div>
             }
             <div class="ck-form-stack">
               <div class="ck-field">
@@ -132,7 +132,7 @@ import { PortalUser, Tenant } from "../../core/models";
                 <label class="ck-label">Initial Password</label>
                 <input class="ck-input" [(ngModel)]="userForm.password" type="password" placeholder="••••••••" />
               </div>
-              <button class="ck-btn ck-btn--primary" style="width: 100%;" (click)="createUser()" [disabled]="creatingUser">
+              <button class="ck-btn ck-btn--primary ck-auto-034" (click)="createUser()" [disabled]="creatingUser">
                 {{ creatingUser ? 'Creating…' : 'Create User' }}
               </button>
             </div>
@@ -144,7 +144,7 @@ import { PortalUser, Tenant } from "../../core/models";
               <p class="ck-card__title">Assign Workspace</p>
             </div>
             @if (membershipSuccess) {
-              <div class="ck-alert ck-alert--success" style="margin-bottom: 12px;">Membership assigned.</div>
+              <div class="ck-alert ck-alert--success ck-auto-033">Membership assigned.</div>
             }
             <div class="ck-form-stack">
               <div class="ck-field">
@@ -171,7 +171,7 @@ import { PortalUser, Tenant } from "../../core/models";
                   <option value="viewer">Viewer</option>
                 </select>
               </div>
-              <button class="ck-btn ck-btn--secondary" style="width: 100%;" (click)="assignMembership()" [disabled]="assigningMembership">
+              <button class="ck-btn ck-btn--secondary ck-auto-034" (click)="assignMembership()" [disabled]="assigningMembership">
                 {{ assigningMembership ? 'Assigning…' : 'Assign' }}
               </button>
             </div>

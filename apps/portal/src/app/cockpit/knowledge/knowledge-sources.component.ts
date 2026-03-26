@@ -10,23 +10,15 @@ import { SourceItem, Project } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <span>Knowledge</span>
-        <span>›</span>
-        <strong>Sources</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge/documents">Documents</a>
-        <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge/ingestions">Jobs</a>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Knowledge Sources</h1>
-          <p class="ck-page-header__sub">Connected data sources powering your bots</p>
+          <p class="ck-page-header__sub">Advanced and manually managed data sources powering your bots.</p>
+        </div>
+        <div class="ck-page-header__actions">
+          <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge/documents">Documents</a>
+          <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge/ingestions">Jobs</a>
         </div>
       </div>
 
@@ -36,7 +28,7 @@ import { SourceItem, Project } from "../../core/models";
           @if (loading) {
             <div class="ck-card">
               @for (i of [1,2,3]; track i) {
-                <div class="ck-skeleton" style="height: 44px; margin-bottom: 8px;"></div>
+                <div class="ck-skeleton ck-auto-031"></div>
               }
             </div>
           } @else if (sources.length > 0) {
@@ -60,7 +52,7 @@ import { SourceItem, Project } from "../../core/models";
                       <td>
                         <span class="ck-badge" [class]="kindBadge(src.kind)">{{ src.kind }}</span>
                       </td>
-                      <td style="color: var(--ck-text-muted); font-size: 0.78rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                      <td class="ck-auto-172">
                         {{ src.entryUrl ?? src.entry_url }}
                       </td>
                       <td>
@@ -95,10 +87,10 @@ import { SourceItem, Project } from "../../core/models";
             <p class="ck-card__title">Add Source</p>
           </div>
           @if (addSuccess) {
-            <div class="ck-alert ck-alert--success" style="margin-bottom: 12px;">Source added successfully.</div>
+            <div class="ck-alert ck-alert--success ck-auto-033">Source added successfully.</div>
           }
           @if (addError) {
-            <div class="ck-alert ck-alert--danger" style="margin-bottom: 12px;">{{ addError }}</div>
+            <div class="ck-alert ck-alert--danger ck-auto-033">{{ addError }}</div>
           }
           <div class="ck-form-stack">
             <div class="ck-field">
@@ -144,14 +136,14 @@ import { SourceItem, Project } from "../../core/models";
               <div class="ck-field">
                 <label class="ck-label">Transcript Language</label>
                 <input class="ck-input" [(ngModel)]="form.ytLang" placeholder="es" />
-                <p class="ck-label" style="margin-top: 4px; font-size: 0.75rem; color: var(--ck-text-muted);">ISO 639-1 code, e.g. es, en, fr</p>
+                <p class="ck-label ck-auto-173">ISO 639-1 code, e.g. es, en, fr</p>
               </div>
             }
             @if (form.kind === 'notion') {
               <div class="ck-field">
                 <label class="ck-label">Notion Integration Token</label>
                 <input class="ck-input" [(ngModel)]="form.notionToken" type="password" placeholder="secret_..." />
-                <p class="ck-label" style="margin-top: 4px; font-size: 0.75rem; color: var(--ck-text-muted);">Internal integration token from notion.so/my-integrations</p>
+                <p class="ck-label ck-auto-173">Internal integration token from notion.so/my-integrations</p>
               </div>
             }
             @if (form.kind === 'gemini_file') {
@@ -186,12 +178,12 @@ import { SourceItem, Project } from "../../core/models";
                 <label class="ck-label">Custom Headers (JSON)</label>
                 <textarea class="ck-textarea" [(ngModel)]="form.apiHeaders" rows="3"
                   placeholder='&#123;"Authorization": "Bearer TOKEN"&#125;'></textarea>
-                <p class="ck-label" style="margin-top: 4px; font-size: 0.75rem; color: var(--ck-text-muted);">Optional JSON object with request headers</p>
+                <p class="ck-label ck-auto-173">Optional JSON object with request headers</p>
               </div>
               <div class="ck-field">
                 <label class="ck-label">JSON Content Path</label>
                 <input class="ck-input" [(ngModel)]="form.apiContentPath" placeholder="data.items" />
-                <p class="ck-label" style="margin-top: 4px; font-size: 0.75rem; color: var(--ck-text-muted);">Optional dot-path to extract from the response (e.g. data.items)</p>
+                <p class="ck-label ck-auto-173">Optional dot-path to extract from the response (e.g. data.items)</p>
               </div>
             }
             <div class="ck-field">
@@ -201,7 +193,40 @@ import { SourceItem, Project } from "../../core/models";
                 <option value="private">Private</option>
               </select>
             </div>
-            <button class="ck-btn ck-btn--primary" style="width: 100%;" (click)="addSource()" [disabled]="adding">
+            <div class="ck-divider"></div>
+            <div class="ck-field">
+              <label class="ck-label">Upload Local Document</label>
+              <div class="ck-upload-row">
+                <input
+                  #documentUploadInput
+                  class="ck-input"
+                  type="file"
+                  accept=".pdf,.md,.markdown,.txt,.html,.htm,text/markdown,text/plain,text/html,application/pdf"
+                  (change)="onDocumentSelected($event)"
+                />
+                <button
+                  class="ck-btn ck-btn--secondary ck-btn--sm"
+                  type="button"
+                  (click)="uploadDocument()"
+                  [disabled]="uploadingDocument || !documentUploadName"
+                >
+                  {{ uploadingDocument ? 'Uploading…' : 'Upload Document' }}
+                </button>
+              </div>
+              <p class="ck-label ck-auto-173">
+                Uploads are stored locally, a private source is created or reused, and an ingestion job is queued automatically.
+              </p>
+              @if (documentUploadName) {
+                <p class="ck-text-xs ck-text-soft">Selected: {{ documentUploadName }}</p>
+              }
+              @if (documentUploadSuccess) {
+                <p class="ck-text-xs ck-text-success">{{ documentUploadSuccess }}</p>
+              }
+              @if (documentUploadError) {
+                <p class="ck-text-xs ck-text-danger">{{ documentUploadError }}</p>
+              }
+            </div>
+            <button class="ck-btn ck-btn--primary ck-auto-034" (click)="addSource()" [disabled]="adding">
               {{ adding ? 'Adding…' : 'Add Source' }}
             </button>
           </div>
@@ -218,6 +243,11 @@ export class KnowledgeSourcesComponent implements OnInit {
   addSuccess = false;
   addError = "";
   syncingId = "";
+  documentUploadName = "";
+  documentUploadError = "";
+  documentUploadSuccess = "";
+  uploadingDocument = false;
+  private selectedDocumentFile: File | null = null;
 
   form = {
     projectKey: "",
@@ -328,6 +358,42 @@ export class KnowledgeSourcesComponent implements OnInit {
       });
     } finally {
       this.syncingId = "";
+    }
+  }
+
+  onDocumentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0] ?? null;
+    this.selectedDocumentFile = file;
+    this.documentUploadName = file?.name ?? "";
+    this.documentUploadError = "";
+    this.documentUploadSuccess = "";
+  }
+
+  async uploadDocument(): Promise<void> {
+    const tenantId = this.store.activeTenantId();
+    if (!tenantId || !this.form.projectKey || !this.selectedDocumentFile) {
+      return;
+    }
+
+    this.uploadingDocument = true;
+    this.documentUploadError = "";
+    this.documentUploadSuccess = "";
+    try {
+      const uploaded = await this.api.uploadKnowledgeDocument(
+        tenantId,
+        this.form.projectKey,
+        this.selectedDocumentFile,
+        this.form.sourceKey || undefined,
+      );
+      this.documentUploadSuccess = `Queued ingestion for ${uploaded.filename}${uploaded.jobId ? ` · job ${uploaded.jobId.slice(0, 8)}…` : ""}.`;
+      this.selectedDocumentFile = null;
+      this.documentUploadName = "";
+      await this.load(tenantId);
+    } catch (e: any) {
+      this.documentUploadError = e?.message ?? "Failed to upload document.";
+    } finally {
+      this.uploadingDocument = false;
     }
   }
 

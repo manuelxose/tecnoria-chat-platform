@@ -1,322 +1,371 @@
+import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
-import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
-import { CockpitStore } from "../cockpit-store.service";
+import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { PortalApiService } from "../../core/portal-api.service";
-import { AiConfig, Project } from "../../core/models";
+import { CrawlBrandSignals, WidgetPresetKey } from "../../core/models";
+import { CockpitStore } from "../cockpit-store.service";
+
+type WizardStep = "source" | "identity" | "knowledge" | "design" | "deploy";
+
+interface DiscoveredPage {
+  enabled: boolean;
+  title: string;
+  url: string;
+}
+
+interface WidgetThemeOption {
+  accentColor: string;
+  description: string;
+  key: WidgetPresetKey;
+  label: string;
+  surfaceColor: string;
+  textColor: string;
+}
+
+interface SiteProfile extends CrawlBrandSignals {
+  baseUrl: string;
+  description: string;
+  sourceUrl: string;
+  title: string;
+}
 
 @Component({
   selector: "app-bot-builder",
   standalone: true,
-  imports: [RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <a routerLink="/app/bots" style="color: var(--ck-text-muted); text-decoration: none;">Bots</a>
-        <span>›</span>
-        <strong>{{ isNew ? 'New Bot' : 'Edit Bot' }}</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="cancel()">Cancel</button>
-        <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="save()" [disabled]="saving">
-          {{ saving ? 'Saving…' : 'Save Bot' }}
-        </button>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
-          <h1 class="ck-page-header__title">{{ isNew ? 'Create Bot' : 'Edit Bot' }}</h1>
-          <p class="ck-page-header__sub">{{ isNew ? 'Configure a new AI assistant' : 'Update bot configuration' }}</p>
+          <h1 class="ck-page-header__title">{{ isNew ? "Setup Wizard" : "Edit Bot" }}</h1>
+          <p class="ck-page-header__sub">
+            {{ isNew ? "Guided onboarding from site analysis to deploy-ready embed." : "Legacy editing flow kept for compatibility." }}
+          </p>
         </div>
+        @if (!isNew) {
+          <div class="ck-page-header__actions">
+            <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="cancel()">Cancel</button>
+            <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="save()" [disabled]="saving">
+              {{ saving ? "Saving…" : "Save Changes" }}
+            </button>
+          </div>
+        }
       </div>
 
       @if (error) {
-        <div class="ck-alert ck-alert--danger" style="margin-bottom: 16px;">{{ error }}</div>
+        <div class="ck-alert ck-alert--danger ck-mb-xl">{{ error }}</div>
       }
       @if (saved) {
-        <div class="ck-alert ck-alert--success" style="margin-bottom: 16px;">Bot saved successfully.</div>
+        <div class="ck-alert ck-alert--success ck-mb-xl">Bot configuration saved.</div>
       }
 
-      <div class="ck-grid-sidebar">
-        <!-- Left: Main config -->
-        <div style="display: grid; gap: 16px;">
-          <!-- Identity -->
-          <div class="ck-card">
-            <div class="ck-card__header">
-              <p class="ck-card__title">Bot Identity</p>
-            </div>
-            <div class="ck-form-stack">
-              <div class="ck-form-grid">
-                <div class="ck-field">
-                  <label class="ck-label">Project Key <span style="color: var(--ck-danger)">*</span></label>
-                  <input class="ck-input" [(ngModel)]="form.projectKey" placeholder="my-bot" [disabled]="!isNew" />
-                </div>
-                <div class="ck-field">
-                  <label class="ck-label">Display Name <span style="color: var(--ck-danger)">*</span></label>
-                  <input class="ck-input" [(ngModel)]="form.name" placeholder="My AI Assistant" />
-                </div>
-              </div>
-              <div class="ck-form-grid">
-                <div class="ck-field">
-                  <label class="ck-label">Bot Name</label>
-                  <input class="ck-input" [(ngModel)]="form.botName" placeholder="Assistant" />
-                </div>
-                <div class="ck-field">
-                  <label class="ck-label">Status</label>
-                  <select class="ck-select" [(ngModel)]="form.status">
-                    <option value="active">Active</option>
-                    <option value="draft">Draft</option>
-                    <option value="disabled">Disabled</option>
-                  </select>
-                </div>
-              </div>
-              <div class="ck-field">
-                <label class="ck-label">Allowed Domains</label>
-                <input class="ck-input" [(ngModel)]="form.allowedDomainsText" placeholder="example.com, app.example.com" />
-                <span style="font-size: 0.75rem; color: var(--ck-text-muted);">Comma-separated list of domains where this bot can be embedded.</span>
-              </div>
-              <div class="ck-field">
-                <label class="ck-label">Welcome Message</label>
-                <textarea class="ck-textarea" [(ngModel)]="form.welcomeMessage" rows="3" placeholder="Hello! How can I help you today?"></textarea>
-              </div>
-              <div class="ck-field">
-                <label class="ck-label">Response Language</label>
-                <select class="ck-select" [(ngModel)]="form.languageMode">
-                  <option value="fixed">Fixed — use project language</option>
-                  <option value="auto">Auto-detect visitor language</option>
-                </select>
-                <span style="font-size: 0.75rem; color: var(--ck-text-muted);">Auto-detect uses the visitor's browser language for bot responses.</span>
-              </div>
+      <div class="wizard-container" [class.is-new]="isNew">
+        <aside class="wizard-sidebar" *ngIf="isNew">
+          <div class="wizard-step" [class.active]="currentStep === 'source'" [class.completed]="isStepCompleted('source')">
+            <div class="step-number">1</div>
+            <div class="step-info">
+              <p class="step-title">Knowledge Source</p>
+              <p class="step-sub">Connect your website</p>
             </div>
           </div>
-
-          <!-- Prompt Policy -->
-          <div class="ck-card">
-            <div class="ck-card__header">
-              <p class="ck-card__title">Prompt Policy</p>
-              <p class="ck-card__sub">Controls how the AI responds</p>
-            </div>
-            <div class="ck-form-stack">
-              <div class="ck-field">
-                <label class="ck-label">Tone</label>
-                <input class="ck-input" [(ngModel)]="form.promptTone" placeholder="Professional, friendly, concise" />
-              </div>
-              <div class="ck-field">
-                <label class="ck-label">Out-of-scope message</label>
-                <textarea class="ck-textarea" [(ngModel)]="form.outOfScopeMessage" rows="2"
-                  placeholder="I can only answer questions about [topic]. For other inquiries, please contact us."></textarea>
-              </div>
+          <div class="wizard-step" [class.active]="currentStep === 'identity'" [class.completed]="isStepCompleted('identity')">
+            <div class="step-number">2</div>
+            <div class="step-info">
+              <p class="step-title">AI Persona</p>
+              <p class="step-sub">Name, tone and scope</p>
             </div>
           </div>
-
-          <!-- AI Model Configuration -->
-          @if (!isNew) {
-            <div class="ck-card">
-              <div class="ck-card__header">
-                <p class="ck-card__title">AI Model</p>
-                <p class="ck-card__sub">Override default LLM settings for this bot</p>
-              </div>
-              <div class="ck-form-stack">
-                <div class="ck-form-grid">
-                  <div class="ck-field">
-                    <label class="ck-label">Provider</label>
-                    <select class="ck-select" [(ngModel)]="aiForm.provider">
-                      <option value="">Default (OpenAI)</option>
-                      <option value="openai">OpenAI</option>
-                      <option value="anthropic">Anthropic</option>
-                      <option value="deepseek">DeepSeek</option>
-                      <option value="google">Google Gemini</option>
-                    </select>
-                  </div>
-                  <div class="ck-field">
-                    <label class="ck-label">Model</label>
-                    <input class="ck-input" [(ngModel)]="aiForm.model" placeholder="gpt-4o-mini" />
-                  </div>
-                </div>
-                <div class="ck-form-grid">
-                  <div class="ck-field">
-                    <label class="ck-label">Temperature: {{ aiForm.temperature }}</label>
-                    <input type="range" min="0" max="1" step="0.05" [(ngModel)]="aiForm.temperature" style="width: 100%;" />
-                  </div>
-                  <div class="ck-field">
-                    <label class="ck-label">Max Tokens</label>
-                    <input class="ck-input" type="number" [(ngModel)]="aiForm.maxTokens" placeholder="1024" min="256" max="4096" />
-                  </div>
-                </div>
-                <div class="ck-field">
-                  <label class="ck-label">Extra System Prompt</label>
-                  <textarea class="ck-textarea" [(ngModel)]="aiForm.systemPromptAdditions" rows="3"
-                    placeholder="Additional instructions appended to the system prompt…"></textarea>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                  <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="saveAiConfig()" [disabled]="savingAi">
-                    {{ savingAi ? 'Saving…' : 'Save AI Config' }}
-                  </button>
-                  @if (savedAi) {
-                    <span style="font-size: 0.82rem; color: var(--ck-accent-strong);">Saved!</span>
-                  }
-                </div>
-              </div>
-            </div>
-          }
-
-          <!-- CTA Configuration -->
-          <div class="ck-card">
-            <div class="ck-card__header">
-              <p class="ck-card__title">Call-to-Action</p>
-              <p class="ck-card__sub">Drive users to take action</p>
-            </div>
-            <div class="ck-form-stack">
-              <div class="ck-form-grid">
-                <div class="ck-field">
-                  <label class="ck-label">Primary CTA Label</label>
-                  <input class="ck-input" [(ngModel)]="form.ctaPrimaryLabel" placeholder="Book a demo" />
-                </div>
-                <div class="ck-field">
-                  <label class="ck-label">Primary CTA URL</label>
-                  <input class="ck-input" [(ngModel)]="form.ctaPrimaryUrl" placeholder="https://..." />
-                </div>
-              </div>
-              <div class="ck-form-grid">
-                <div class="ck-field">
-                  <label class="ck-label">Secondary CTA Label</label>
-                  <input class="ck-input" [(ngModel)]="form.ctaSecondaryLabel" placeholder="Learn more" />
-                </div>
-                <div class="ck-field">
-                  <label class="ck-label">Secondary CTA URL</label>
-                  <input class="ck-input" [(ngModel)]="form.ctaSecondaryUrl" placeholder="https://..." />
-                </div>
-              </div>
+          <div class="wizard-step" [class.active]="currentStep === 'knowledge'" [class.completed]="isStepCompleted('knowledge')">
+            <div class="step-number">3</div>
+            <div class="step-info">
+              <p class="step-title">Content Analysis</p>
+              <p class="step-sub">Review discovered pages</p>
             </div>
           </div>
-        </div>
-
-        <!-- Right: Widget theme + embed -->
-        <div style="display: grid; gap: 16px; align-content: start;">
-          <!-- Widget theme -->
-          <div class="ck-card">
-            <div class="ck-card__header">
-              <p class="ck-card__title">Widget Theme</p>
+          <div class="wizard-step" [class.active]="currentStep === 'design'" [class.completed]="isStepCompleted('design')">
+            <div class="step-number">4</div>
+            <div class="step-info">
+              <p class="step-title">Design & Behavior</p>
+              <p class="step-sub">Choose a Talkaris preset</p>
             </div>
-            <div class="ck-form-stack">
-              <div class="ck-field">
-                <label class="ck-label">Launcher Label</label>
-                <input class="ck-input" [(ngModel)]="form.launcherLabel" placeholder="Chat with us" />
-              </div>
-              <div class="ck-form-grid">
-                <div class="ck-field">
-                  <label class="ck-label">Accent Color</label>
-                  <input class="ck-input" [(ngModel)]="form.accentColor" placeholder="#6366f1" />
+          </div>
+          <div class="wizard-step" [class.active]="currentStep === 'deploy'" [class.completed]="isStepCompleted('deploy')">
+            <div class="step-number">5</div>
+            <div class="step-info">
+              <p class="step-title">Deploy</p>
+              <p class="step-sub">Embed and go live</p>
+            </div>
+          </div>
+        </aside>
+
+        <div class="wizard-content">
+          <div class="wizard-view" [ngSwitch]="currentStep">
+            <div *ngSwitchCase="'source'" class="fade-in">
+              <h1 class="wizard-title">Where should your AI learn from?</h1>
+              <p class="wizard-sub">Paste your site URL. Talkaris detects the sitemap first and falls back to root crawl when needed.</p>
+
+              <div class="ck-card magic-card">
+                <div class="ck-form-stack">
+                  <div class="ck-field">
+                    <label class="ck-label">Website URL</label>
+                    <div class="ck-form-inline">
+                      <input class="ck-input ck-grow" [(ngModel)]="sourceUrl" placeholder="https://example.com" />
+                      <button class="ck-btn ck-btn--primary" (click)="analyzeSite()" [disabled]="analyzing || !sourceUrl.trim()">
+                        {{ analyzing ? "Analyzing…" : "Analyze Site" }}
+                      </button>
+                    </div>
+                  </div>
+                  <p class="ck-text-sm ck-text-muted">Talkaris infers the bot identity, the domain allowlist and the canonical website ingestion path automatically.</p>
                 </div>
-                <div class="ck-field">
-                  <label class="ck-label">Surface Color</label>
-                  <input class="ck-input" [(ngModel)]="form.surfaceColor" placeholder="#0f1625" />
+
+                <div class="analysis-progress" *ngIf="analyzing || analysisLogs.length">
+                  <progress class="ck-progress" max="100" [value]="analysisProgress"></progress>
+                  <div class="analysis-log">
+                    <p *ngFor="let log of analysisLogs" class="log-item">{{ log }}</p>
+                  </div>
                 </div>
               </div>
-              <div class="ck-field">
-                <label class="ck-label">Text Color</label>
-                <input class="ck-input" [(ngModel)]="form.textColor" placeholder="#e2e8f0" />
+            </div>
+
+            <div *ngSwitchCase="'identity'" class="fade-in">
+              <h1 class="wizard-title">Give your AI a personality</h1>
+              <p class="wizard-sub">Define the operational identity your customers and operators will recognize instantly.</p>
+
+              <div class="ck-grid-two">
+                <div class="ck-card">
+                  <div class="ck-form-stack">
+                    <div class="ck-field">
+                      <label class="ck-label">Workspace Project Name</label>
+                      <input class="ck-input" [(ngModel)]="form.name" placeholder="Talkaris Support Assistant" />
+                    </div>
+                    <div class="ck-field">
+                      <label class="ck-label">Assistant Name</label>
+                      <input class="ck-input" [(ngModel)]="form.botName" placeholder="Nexus Assistant" />
+                    </div>
+                    <div class="ck-field">
+                      <label class="ck-label">Allowed Domains</label>
+                      <input class="ck-input" [(ngModel)]="form.allowedDomainsText" placeholder="example.com, app.example.com" />
+                    </div>
+                    <div class="ck-field">
+                      <label class="ck-label">Tone of Voice</label>
+                      <div class="tone-grid">
+                        <button type="button" class="tone-card" [class.active]="form.promptTone === 'Professional'" (click)="form.promptTone = 'Professional'">Professional</button>
+                        <button type="button" class="tone-card" [class.active]="form.promptTone === 'Friendly'" (click)="form.promptTone = 'Friendly'">Friendly</button>
+                        <button type="button" class="tone-card" [class.active]="form.promptTone === 'Concise'" (click)="form.promptTone = 'Concise'">Concise</button>
+                      </div>
+                    </div>
+                    <div class="ck-field">
+                      <label class="ck-label">Welcome Message</label>
+                      <textarea class="ck-textarea" [(ngModel)]="form.welcomeMessage" rows="4"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ck-card preview-card">
+                  <div class="preview-header">Live Preview</div>
+                  <div class="chat-mockup">
+                    <div class="chat-bubble bot">Hello, I'm {{ form.botName }}. {{ form.welcomeMessage }}</div>
+                  </div>
+                </div>
               </div>
-              <div class="ck-field">
-                <label class="ck-label">Logo URL (optional)</label>
-                <input class="ck-input" [(ngModel)]="form.logoUrl" placeholder="https://example.com/logo.png" />
-                <span style="font-size: 0.75rem; color: var(--ck-text-muted);">Displayed in the widget header. Leave blank to show only the bot name.</span>
+            </div>
+
+            <div *ngSwitchCase="'knowledge'" class="fade-in">
+              <h1 class="wizard-title">Review discovered content</h1>
+              <p class="wizard-sub">Keep the pages that should feed the assistant and exclude the noise.</p>
+
+              <div class="ck-card">
+                <div class="page-list">
+                  <div class="page-item" *ngFor="let page of discoveredPages">
+                    <div class="page-info">
+                      <span class="page-title">{{ page.title || page.url }}</span>
+                      <span class="page-url">{{ page.url }}</span>
+                    </div>
+                    <input type="checkbox" [(ngModel)]="page.enabled" />
+                  </div>
+                </div>
               </div>
-              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
-                <input type="checkbox" [(ngModel)]="form.removeBranding" />
-                <span class="ck-label" style="margin: 0;">Remove Talkaris references from widget</span>
-              </label>
-              <div class="ck-field" style="margin-top: 12px;">
-                <label class="ck-label">Proactive message (optional)</label>
-                <input class="ck-input" [(ngModel)]="form.proactiveMessage" placeholder="¿Puedo ayudarte en algo?" />
-                <span style="font-size: 0.75rem; color: var(--ck-text-muted);">Shown as a bubble above the launcher. Leave blank to disable.</span>
-              </div>
-              @if (form.proactiveMessage) {
-                <div class="ck-field">
-                  <label class="ck-label">Show after (seconds)</label>
-                  <input class="ck-input" type="number" [(ngModel)]="form.proactiveDelaySeconds" placeholder="8" min="3" max="120" />
+            </div>
+
+            <div *ngSwitchCase="'design'" class="fade-in">
+              <h1 class="wizard-title">Design your widget</h1>
+              <p class="wizard-sub">Talkaris recommends one preset from the detected site signals and keeps two approved alternates ready for override.</p>
+
+              @if (siteProfile) {
+                <div class="ck-note ck-note--accent ck-mb-2xl">
+                  <div class="ck-row-start">
+                    @if (siteProfile.faviconUrl) {
+                      <img [src]="siteProfile.faviconUrl" [alt]="siteProfile.siteName" class="ck-site-signal__icon" />
+                    }
+                    <div class="ck-stack-xs">
+                      <strong>Adaptive recommendation for {{ siteProfile.siteName }}</strong>
+                      <span class="ck-text-sm ck-text-soft">
+                        {{ siteProfile.description || siteProfile.copyHints[0] || "Signals captured from the public website." }}
+                      </span>
+                      @if (siteProfile.dominantColors.length) {
+                        <span class="ck-text-xs ck-text-muted">
+                          Detected colors: {{ siteProfile.dominantColors.join(" · ") }}
+                        </span>
+                      }
+                    </div>
+                  </div>
                 </div>
               }
+
+              <div class="ck-grid-two">
+                <div class="ck-card ck-stack-lg">
+                  <div class="ck-field">
+                    <label class="ck-label">Launcher Label</label>
+                    <input class="ck-input" [(ngModel)]="form.launcherLabel" />
+                  </div>
+
+                  <div class="ck-field">
+                    <label class="ck-label">Visual Preset</label>
+                    <div class="ck-swatch-grid">
+                      <button
+                        *ngFor="let theme of widgetThemes"
+                        type="button"
+                        class="ck-widget-swatch"
+                        [class.is-active]="theme.key === selectedThemeKey"
+                        (click)="selectTheme(theme)"
+                      >
+                        <span class="ck-widget-swatch__chip" [ngClass]="swatchChipClass(theme.key)"></span>
+                        <span class="ck-widget-swatch__badge" *ngIf="themeRecommendationLabel(theme.key) as label">
+                          {{ label }}
+                        </span>
+                        <span class="ck-widget-swatch__label">{{ theme.label }}</span>
+                        <span class="ck-text-sm ck-text-muted">{{ theme.description }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  @if (hasLegacyAccentColor()) {
+                    <p class="ck-note ck-note--accent">
+                      This bot is using a legacy custom accent. Saving from here will normalize it to the selected Talkaris preset.
+                    </p>
+                  }
+                </div>
+
+                <div
+                  class="ck-card ck-widget-preview"
+                  [class.ck-widget-preview--indigo]="selectedTheme.key === 'indigo'"
+                  [class.ck-widget-preview--violet]="selectedTheme.key === 'violet'"
+                  [class.ck-widget-preview--midnight]="selectedTheme.key === 'midnight'"
+                  [class.ck-widget-preview--aurora]="selectedTheme.key === 'aurora'"
+                >
+                  <div class="preview-header">Widget Preview</div>
+                  <div class="ck-widget-preview__body">
+                    <div class="chat-bubble bot">{{ previewMessage() }}</div>
+                    <div class="ck-widget-preview__meta">
+                      <span class="ck-badge ck-badge--accent">AI preset</span>
+                      <span class="ck-badge ck-badge--default">{{ selectedTheme.label }}</span>
+                      <span class="ck-badge ck-badge--default">{{ form.promptTone }}</span>
+                      @if (siteProfile?.siteName) {
+                        <span class="ck-badge ck-badge--default">{{ siteProfile?.siteName }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="ck-widget-preview__launcher">
+                    <div class="launcher-preview">{{ form.launcherLabel }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngSwitchCase="'deploy'" class="fade-in">
+              <h1 class="wizard-title">You’re all set</h1>
+              <p class="wizard-sub">Copy the snippet once. The same embed works for Angular, Node/SSR, WordPress and plain HTML.</p>
+
+              <div class="ck-card">
+                <div class="ck-card__header">
+                  <div>
+                    <p class="ck-card__title">Embed Code</p>
+                    <p class="ck-card__sub">Generated for <strong>{{ form.projectKey }}</strong></p>
+                  </div>
+                  <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="copyEmbed()" [disabled]="!snippetText">
+                    {{ copiedEmbed ? "Copied" : "Copy Code" }}
+                  </button>
+                </div>
+                <pre class="ck-code">{{ snippetText || "Generating snippet…" }}</pre>
+              </div>
+
+              <div class="ck-flow-inline ck-mt-3xl">
+                <button class="ck-btn ck-btn--primary ck-btn--lg" (click)="finish()">Go to Dashboard</button>
+                <a class="ck-btn ck-btn--secondary ck-btn--lg" [routerLink]="['/app/bots', form.projectKey, 'test']" *ngIf="form.projectKey">
+                  Open Playground
+                </a>
+              </div>
             </div>
           </div>
 
-          <!-- Features -->
-          @if (!isNew) {
-            <div class="ck-card">
-              <div class="ck-card__header">
-                <p class="ck-card__title">Features</p>
-              </div>
-              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 6px 0;">
-                <div>
-                  <p style="font-size: 0.84rem; font-weight: 500; color: var(--ck-text); margin: 0;">Human Handover</p>
-                  <p style="font-size: 0.78rem; color: var(--ck-text-muted); margin: 2px 0 0;">Show "Talk to a person" button in widget</p>
-                </div>
-                <input type="checkbox" [(ngModel)]="form.enableHandover" (ngModelChange)="saveFeatures()" />
-              </label>
-            </div>
-          }
-
-          <!-- Embed snippet -->
-          @if (!isNew && snippetText) {
-            <div class="ck-card">
-              <div class="ck-card__header">
-                <p class="ck-card__title">Embed Code</p>
-                <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="copyEmbed()">
-                  {{ copiedEmbed ? '✓ Copied' : 'Copy' }}
-                </button>
-              </div>
-              <pre class="ck-code" style="font-size: 0.75rem;">{{ snippetText }}</pre>
-            </div>
-          }
-
-          @if (!isNew && !snippetText) {
-            <div class="ck-card">
-              <div class="ck-card__header">
-                <p class="ck-card__title">Embed Code</p>
-              </div>
-              <button class="ck-btn ck-btn--secondary" style="width: 100%;" (click)="loadSnippet()">
-                Load Embed Snippet
-              </button>
-            </div>
-          }
-
-          <!-- Danger zone -->
-          @if (!isNew) {
-            <div class="ck-card" style="border-color: rgba(239, 68, 68, 0.2);">
-              <div class="ck-card__header">
-                <p class="ck-card__title" style="color: var(--ck-danger);">Danger Zone</p>
-              </div>
-              <p style="font-size: 0.84rem; color: var(--ck-text-muted); margin: 0 0 12px;">
-                Disabling this bot will stop it from responding to new conversations.
-              </p>
-              <button class="ck-btn ck-btn--danger" (click)="disable()">
-                Disable Bot
-              </button>
-            </div>
-          }
+          <div class="wizard-footer" *ngIf="isNew">
+            <button class="ck-btn ck-btn--ghost" (click)="prevStep()" [disabled]="currentStep === 'source'">Back</button>
+            <div class="spacer"></div>
+            <button class="ck-btn ck-btn--primary" (click)="nextStep()" [disabled]="saving || analyzing">
+              {{ currentStep === "deploy" ? "Finish" : "Next Step" }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   `,
 })
 export class BotBuilderComponent implements OnInit {
+  readonly widgetThemes: WidgetThemeOption[] = [
+    {
+      key: "indigo",
+      label: "Indigo Pulse",
+      description: "Primary product action system.",
+      accentColor: "#6366f1",
+      surfaceColor: "#0f172a",
+      textColor: "#f8fafc",
+    },
+    {
+      key: "violet",
+      label: "Violet Magic",
+      description: "AI-first emphasis for premium copilots.",
+      accentColor: "#8b5cf6",
+      surfaceColor: "#111827",
+      textColor: "#f8fafc",
+    },
+    {
+      key: "midnight",
+      label: "Midnight Slate",
+      description: "Subtle, technical and low-noise.",
+      accentColor: "#334155",
+      surfaceColor: "#020617",
+      textColor: "#f8fafc",
+    },
+    {
+      key: "aurora",
+      label: "Aurora Blend",
+      description: "Balanced primary plus AI accent gradient.",
+      accentColor: "#7c3aed",
+      surfaceColor: "#0f172a",
+      textColor: "#f8fafc",
+    },
+  ];
+
   isNew = true;
+  currentStep: WizardStep = "source";
+  completedSteps = new Set<WizardStep>();
+  selectedThemeKey: WidgetThemeOption["key"] = "indigo";
+  recommendedThemeKeys: WidgetThemeOption["key"][] = ["indigo", "violet", "midnight"];
+  siteProfile: SiteProfile | null = null;
+
   saving = false;
   saved = false;
   error = "";
   snippetText = "";
   copiedEmbed = false;
-  savingAi = false;
-  savedAi = false;
-  aiForm: { provider: string; model: string; temperature: number; maxTokens: number; systemPromptAdditions: string } = {
-    provider: "",
-    model: "",
-    temperature: 0.3,
-    maxTokens: 1024,
-    systemPromptAdditions: "",
-  };
+  existingMetadata: Record<string, unknown> = {};
+
+  sourceUrl = "";
+  analyzing = false;
+  analysisProgress = 0;
+  analysisLogs: string[] = [];
+  discoveredPages: DiscoveredPage[] = [];
 
   form = {
     projectKey: "",
@@ -324,24 +373,17 @@ export class BotBuilderComponent implements OnInit {
     status: "active",
     botName: "Assistant",
     allowedDomainsText: "",
-    welcomeMessage: "",
-    promptTone: "professional, helpful and concise",
+    welcomeMessage: "Hello! How can I help you today?",
+    promptTone: "Professional",
     outOfScopeMessage: "",
     ctaPrimaryLabel: "Book a demo",
     ctaPrimaryUrl: "",
-    ctaSecondaryLabel: "",
-    ctaSecondaryUrl: "",
-    launcherLabel: "Chat with us",
-    accentColor: "#6366f1",
-    surfaceColor: "#0f1625",
-    textColor: "#e2e8f0",
-    enableHandover: false,
-    languageMode: "fixed" as "fixed" | "auto",
-    logoUrl: "",
-    removeBranding: false,
-    proactiveMessage: "",
-    proactiveDelaySeconds: 8,
-  };
+      launcherLabel: "Chat with us",
+      accentColor: "#6366f1",
+      surfaceColor: "#0f172a",
+      textColor: "#f8fafc",
+      presetKey: "indigo" as WidgetPresetKey,
+    };
 
   constructor(
     private readonly store: CockpitStore,
@@ -350,21 +392,158 @@ export class BotBuilderComponent implements OnInit {
     private readonly router: Router
   ) {}
 
+  get selectedTheme(): WidgetThemeOption {
+    return this.widgetThemes.find((theme) => theme.key === this.selectedThemeKey) ?? this.widgetThemes[0];
+  }
+
   async ngOnInit(): Promise<void> {
     const botKey = this.route.snapshot.paramMap.get("botKey");
     if (botKey && botKey !== "new") {
       this.isNew = false;
+      this.currentStep = "identity";
       await this.loadBot(botKey);
-      await this.loadAiConfig(botKey);
+      return;
     }
+
+    this.form.projectKey = `bot-${Math.random().toString(36).slice(2, 7)}`;
+    this.selectTheme(this.selectedTheme);
+  }
+
+  isStepCompleted(step: WizardStep): boolean {
+    return this.completedSteps.has(step);
+  }
+
+  swatchChipClass(key: WidgetThemeOption["key"]): string {
+    return `ck-widget-swatch__chip--${key}`;
+  }
+
+  hasLegacyAccentColor(): boolean {
+    return !this.widgetThemes.some((theme) => theme.accentColor.toLowerCase() === this.form.accentColor.toLowerCase());
+  }
+
+  selectTheme(theme: WidgetThemeOption): void {
+    this.selectedThemeKey = theme.key;
+    this.form.accentColor = theme.accentColor;
+    this.form.surfaceColor = theme.surfaceColor;
+    this.form.textColor = theme.textColor;
+    this.form.presetKey = theme.key;
+  }
+
+  nextStep(): void {
+    const steps: WizardStep[] = ["source", "identity", "knowledge", "design", "deploy"];
+    const index = steps.indexOf(this.currentStep);
+    if (index >= steps.length - 1) {
+      this.finish();
+      return;
+    }
+    this.completedSteps.add(this.currentStep);
+    this.currentStep = steps[index + 1];
+    if (this.currentStep === "deploy") {
+      void this.save();
+    }
+  }
+
+  prevStep(): void {
+    const steps: WizardStep[] = ["source", "identity", "knowledge", "design", "deploy"];
+    const index = steps.indexOf(this.currentStep);
+    if (index > 0) {
+      this.currentStep = steps[index - 1];
+    }
+  }
+
+  async analyzeSite(): Promise<void> {
+    if (!this.sourceUrl.trim()) return;
+    const tenantId = this.store.activeTenantId();
+    if (!tenantId) return;
+
+    this.analyzing = true;
+    this.error = "";
+    this.analysisProgress = 10;
+    this.analysisLogs = ["Initializing crawler", `Connecting to ${this.sourceUrl}`];
+
+    try {
+      const interval = setInterval(() => {
+        if (this.analysisProgress < 90) this.analysisProgress += 5;
+      }, 500);
+
+      const result = await this.api.crawl(tenantId, this.form.projectKey, this.sourceUrl);
+
+      clearInterval(interval);
+      this.analysisProgress = 100;
+      this.analysisLogs.push(`Discovered ${result.pages.length} pages`);
+      if (result.brandSignals.siteName) {
+        this.analysisLogs.push(`Detected brand profile for ${result.brandSignals.siteName}`);
+      }
+      this.analysisLogs.push("Knowledge extraction complete");
+
+      this.discoveredPages = result.pages.map((url) => ({
+        url,
+        enabled: true,
+        title: this.pageTitleFromUrl(url),
+      }));
+      this.siteProfile = {
+        ...result.brandSignals,
+        baseUrl: result.baseUrl,
+        sourceUrl: this.sourceUrl,
+        title: result.metadata?.title || result.brandSignals.siteName || this.sourceUrl,
+        description: result.metadata?.description || result.brandSignals.copyHints[0] || "",
+      };
+      this.form.name = this.siteProfile.title;
+      this.form.botName = this.defaultBotName(this.siteProfile.siteName || result.metadata?.title || this.sourceUrl);
+      this.form.welcomeMessage = this.defaultWelcomeMessage(
+        this.siteProfile.siteName || this.form.botName,
+        this.siteProfile.language
+      );
+      this.form.allowedDomainsText = new URL(result.baseUrl || this.sourceUrl).hostname;
+      if (this.form.projectKey.startsWith("bot-")) {
+        this.form.projectKey = this.defaultProjectKey(this.siteProfile.siteName || this.form.name);
+      }
+      this.applyAdaptivePreset(result.brandSignals);
+
+      setTimeout(() => {
+        this.analyzing = false;
+        this.nextStep();
+      }, 700);
+    } catch (error: any) {
+      this.analyzing = false;
+      this.error = `Failed to analyze site: ${error?.message ?? "Unknown error"}`;
+    }
+  }
+
+  private resolveThemeKey(accentColor: string): WidgetThemeOption["key"] {
+    const match = this.widgetThemes.find((theme) => theme.accentColor.toLowerCase() === accentColor.toLowerCase());
+    return match?.key ?? "indigo";
+  }
+
+  themeRecommendationLabel(key: WidgetPresetKey): string {
+    const rank = this.recommendedThemeKeys.indexOf(key);
+    if (rank === 0) {
+      return "Recommended";
+    }
+    if (rank === 1) {
+      return "Alternate";
+    }
+    if (rank === 2) {
+      return "Reserve";
+    }
+    return "";
+  }
+
+  previewMessage(): string {
+    return (
+      this.siteProfile?.copyHints[0]
+      || "Talkaris copilots your operator flow with governed context and crisp answers."
+    );
   }
 
   private async loadBot(projectKey: string): Promise<void> {
     const tenantId = this.store.activeTenantId();
     if (!tenantId) return;
     const bots = await this.api.tenantProjects(tenantId);
-    const bot = bots.find((b) => b.projectKey === projectKey);
+    const bot = bots.find((candidate) => candidate.projectKey === projectKey);
     if (!bot) return;
+    this.existingMetadata = bot.metadata ?? {};
+
     this.form = {
       projectKey: bot.projectKey,
       name: bot.name,
@@ -376,19 +555,30 @@ export class BotBuilderComponent implements OnInit {
       outOfScopeMessage: bot.promptPolicy.outOfScopeMessage ?? "",
       ctaPrimaryLabel: bot.ctaConfig.primaryLabel,
       ctaPrimaryUrl: bot.ctaConfig.primaryUrl,
-      ctaSecondaryLabel: bot.ctaConfig.secondaryLabel ?? "",
-      ctaSecondaryUrl: bot.ctaConfig.secondaryUrl ?? "",
       launcherLabel: bot.widgetTheme.launcherLabel,
       accentColor: bot.widgetTheme.accentColor,
       surfaceColor: bot.widgetTheme.surfaceColor,
       textColor: bot.widgetTheme.textColor,
-      enableHandover: bot.enableHandover ?? false,
-      languageMode: (bot.languageMode ?? "fixed") as "fixed" | "auto",
-      logoUrl: bot.widgetTheme.logoUrl ?? "",
-      removeBranding: bot.widgetTheme.removeBranding ?? false,
-      proactiveMessage: bot.widgetTheme.proactiveMessage ?? "",
-      proactiveDelaySeconds: bot.widgetTheme.proactiveDelaySeconds ?? 8,
+      presetKey: bot.widgetTheme.presetKey ?? this.resolveThemeKey(bot.widgetTheme.accentColor),
     };
+    const storedSiteProfile = (bot.metadata?.["siteProfile"] as Partial<SiteProfile> | undefined) ?? undefined;
+    if (storedSiteProfile?.siteName) {
+      this.siteProfile = {
+        siteName: storedSiteProfile.siteName,
+        logoUrl: storedSiteProfile.logoUrl ?? null,
+        faviconUrl: storedSiteProfile.faviconUrl ?? null,
+        dominantColors: storedSiteProfile.dominantColors ?? [],
+        language: storedSiteProfile.language ?? bot.language,
+        copyHints: storedSiteProfile.copyHints ?? [],
+        baseUrl: storedSiteProfile.baseUrl ?? "",
+        sourceUrl: storedSiteProfile.sourceUrl ?? "",
+        title: storedSiteProfile.title ?? bot.name,
+        description: storedSiteProfile.description ?? "",
+      };
+      this.applyAdaptivePreset(this.siteProfile, false);
+    }
+    this.selectedThemeKey = bot.widgetTheme.presetKey ?? this.resolveThemeKey(bot.widgetTheme.accentColor);
+    await this.loadSnippet();
   }
 
   async save(): Promise<void> {
@@ -396,15 +586,16 @@ export class BotBuilderComponent implements OnInit {
     if (!tenantId) return;
     this.saving = true;
     this.error = "";
+
     try {
       await this.api.upsertTenantProject(tenantId, {
         projectKey: this.form.projectKey,
-        name: this.form.name,
+        name: this.form.name || this.form.botName,
         status: this.form.status,
         botName: this.form.botName,
         allowedDomains: this.form.allowedDomainsText
           .split(",")
-          .map((d) => d.trim())
+          .map((domain) => domain.trim())
           .filter(Boolean),
         welcomeMessage: this.form.welcomeMessage,
         promptPolicy: {
@@ -414,31 +605,32 @@ export class BotBuilderComponent implements OnInit {
         ctaConfig: {
           primaryLabel: this.form.ctaPrimaryLabel,
           primaryUrl: this.form.ctaPrimaryUrl,
-          secondaryLabel: this.form.ctaSecondaryLabel || undefined,
-          secondaryUrl: this.form.ctaSecondaryUrl || undefined,
         },
         widgetTheme: {
+          presetKey: this.form.presetKey,
           launcherLabel: this.form.launcherLabel,
           accentColor: this.form.accentColor,
           surfaceColor: this.form.surfaceColor,
           textColor: this.form.textColor,
-          ...(this.form.logoUrl ? { logoUrl: this.form.logoUrl } : {}),
-          removeBranding: this.form.removeBranding,
-          ...(this.form.proactiveMessage ? {
-            proactiveMessage: this.form.proactiveMessage,
-            proactiveDelaySeconds: this.form.proactiveDelaySeconds ?? 8,
-          } : {}),
         },
-        languageMode: this.form.languageMode,
+        metadata: {
+          ...this.existingMetadata,
+          ...this.buildProjectMetadata(),
+        },
       });
-      this.saved = true;
-      if (this.isNew) {
-        await this.router.navigate(["/app/bots"]);
+      if (this.sourceUrl.trim()) {
+        const website = await this.api.provisionWebsiteIntegration(tenantId, this.form.projectKey, this.sourceUrl);
+        this.form.allowedDomainsText = website.allowedDomains.join(", ");
+        this.snippetText = website.snippet;
       } else {
-        setTimeout(() => (this.saved = false), 3000);
+        await this.loadSnippet();
       }
-    } catch (e: any) {
-      this.error = e?.message ?? "Failed to save. Try again.";
+      this.saved = true;
+      setTimeout(() => {
+        this.saved = false;
+      }, 2500);
+    } catch (error: any) {
+      this.error = error?.message ?? "Failed to save.";
     } finally {
       this.saving = false;
     }
@@ -447,62 +639,140 @@ export class BotBuilderComponent implements OnInit {
   async loadSnippet(): Promise<void> {
     const tenantId = this.store.activeTenantId();
     if (!tenantId || !this.form.projectKey) return;
-    const data = await this.api.projectSnippet(tenantId, this.form.projectKey);
-    this.snippetText = data.snippet;
-  }
-
-  async copyEmbed(): Promise<void> {
-    await navigator.clipboard.writeText(this.snippetText);
-    this.copiedEmbed = true;
-    setTimeout(() => (this.copiedEmbed = false), 2000);
-  }
-
-  disable(): void {
-    this.form.status = "disabled";
-    this.save();
-  }
-
-  async saveFeatures(): Promise<void> {
-    const tenantId = this.store.activeTenantId();
-    if (!tenantId || !this.form.projectKey) return;
-    await this.api.updateProjectFeatures(tenantId, this.form.projectKey, { enableHandover: this.form.enableHandover }).catch(() => {});
-  }
-
-  private async loadAiConfig(projectKey: string): Promise<void> {
-    const tenantId = this.store.activeTenantId();
-    if (!tenantId) return;
     try {
-      const cfg = await this.api.getAiConfig(tenantId, projectKey);
-      this.aiForm = {
-        provider: cfg.provider ?? "",
-        model: cfg.model ?? "",
-        temperature: cfg.temperature ?? 0.3,
-        maxTokens: cfg.maxTokens ?? 1024,
-        systemPromptAdditions: cfg.systemPromptAdditions ?? "",
-      };
-    } catch { /* not found → leave defaults */ }
-  }
-
-  async saveAiConfig(): Promise<void> {
-    const tenantId = this.store.activeTenantId();
-    if (!tenantId || !this.form.projectKey) return;
-    this.savingAi = true;
-    try {
-      await this.api.updateAiConfig(tenantId, this.form.projectKey, {
-        provider: (this.aiForm.provider as AiConfig["provider"]) || undefined,
-        model: this.aiForm.model || undefined,
-        temperature: this.aiForm.temperature,
-        maxTokens: this.aiForm.maxTokens,
-        systemPromptAdditions: this.aiForm.systemPromptAdditions || undefined,
-      });
-      this.savedAi = true;
-      setTimeout(() => (this.savedAi = false), 3000);
-    } finally {
-      this.savingAi = false;
+      const data = await this.api.projectSnippet(tenantId, this.form.projectKey);
+      this.snippetText = data.snippet;
+    } catch {
+      this.snippetText = "";
     }
   }
 
+  async copyEmbed(): Promise<void> {
+    if (!this.snippetText) return;
+    await navigator.clipboard.writeText(this.snippetText);
+    this.copiedEmbed = true;
+    setTimeout(() => {
+      this.copiedEmbed = false;
+    }, 1800);
+  }
+
+  finish(): void {
+    void this.router.navigate(["/app/bots"]);
+  }
+
   cancel(): void {
-    this.router.navigate(["/app/bots"]);
+    void this.router.navigate(["/app/bots"]);
+  }
+
+  private applyAdaptivePreset(signals: CrawlBrandSignals, autoSelect = true): void {
+    const ranked = this.widgetThemes
+      .map((theme) => ({
+        key: theme.key,
+        score: this.themeScore(theme.key, signals),
+      }))
+      .sort((left, right) => right.score - left.score)
+      .map((item) => item.key);
+
+    this.recommendedThemeKeys = ranked;
+    if (autoSelect) {
+      const nextTheme = this.widgetThemes.find((theme) => theme.key === ranked[0]) ?? this.widgetThemes[0];
+      this.selectTheme(nextTheme);
+    }
+  }
+
+  private themeScore(key: WidgetPresetKey, signals: CrawlBrandSignals): number {
+    const dominantColors = signals.dominantColors.map((color) => color.toLowerCase());
+    const hints = signals.copyHints.join(" ").toLowerCase();
+    const reference = {
+      indigo: "#6366f1",
+      violet: "#8b5cf6",
+      midnight: "#334155",
+      aurora: "#7c3aed",
+    }[key];
+
+    let score = dominantColors.length ? 0 : key === "indigo" ? 1 : 0;
+    for (const color of dominantColors) {
+      score += 1 - Math.min(this.colorDistance(reference, color) / 441, 1);
+    }
+
+    if (/(ai|automation|magic|intelligence|copilot)/.test(hints)) {
+      score += key === "violet" || key === "aurora" ? 1.4 : 0;
+    }
+    if (/(security|ops|data|platform|cloud|infra)/.test(hints)) {
+      score += key === "midnight" ? 1.2 : key === "indigo" ? 0.5 : 0;
+    }
+    if (/(support|sales|service|customer)/.test(hints)) {
+      score += key === "indigo" ? 1 : 0.25;
+    }
+
+    return score;
+  }
+
+  private colorDistance(left: string, right: string): number {
+    const [lr, lg, lb] = this.hexToRgb(left);
+    const [rr, rg, rb] = this.hexToRgb(right);
+    return Math.hypot(lr - rr, lg - rg, lb - rb);
+  }
+
+  private hexToRgb(color: string): [number, number, number] {
+    const normalized = color.replace("#", "");
+    if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+      return [99, 102, 241];
+    }
+    return [
+      Number.parseInt(normalized.slice(0, 2), 16),
+      Number.parseInt(normalized.slice(2, 4), 16),
+      Number.parseInt(normalized.slice(4, 6), 16),
+    ];
+  }
+
+  private pageTitleFromUrl(url: string): string {
+    try {
+      const pathname = new URL(url).pathname.replace(/\/$/, "");
+      const lastSegment = pathname.split("/").filter(Boolean).pop();
+      if (!lastSegment) {
+        return "Homepage";
+      }
+      return lastSegment.replace(/[-_]+/g, " ").replace(/\b\w/g, (match) => match.toUpperCase());
+    } catch {
+      return url;
+    }
+  }
+
+  private defaultProjectKey(value: string): string {
+    const base = value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 28);
+    return base || `bot-${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  private defaultBotName(value: string): string {
+    const cleaned = value.replace(/^https?:\/\//, "").replace(/^www\./, "").trim();
+    return cleaned ? `${cleaned} Copilot` : "Talkaris Copilot";
+  }
+
+  private defaultWelcomeMessage(value: string, language = "en"): string {
+    if (language.toLowerCase().startsWith("es")) {
+      return `Hola, soy el copiloto de ${value}. Puedo orientar a cada visitante con respuestas gobernadas y el siguiente paso correcto.`;
+    }
+
+    return `Hello, I'm the ${value} copilot. I can guide visitors with governed answers and the right next step.`;
+  }
+
+  private buildProjectMetadata(): Record<string, unknown> {
+    if (!this.siteProfile) {
+      return {};
+    }
+
+    return {
+      siteProfile: {
+        ...this.siteProfile,
+        selectedPages: this.discoveredPages.filter((page) => page.enabled).map((page) => page.url),
+      },
+    };
   }
 }

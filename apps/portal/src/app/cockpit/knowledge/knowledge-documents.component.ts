@@ -10,22 +10,14 @@ import { DocumentItem } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <a routerLink="/app/knowledge" style="color: var(--ck-text-muted); text-decoration: none;">Knowledge</a>
-        <span>›</span>
-        <strong>Documents</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <span style="font-size: 0.84rem; color: var(--ck-text-muted);">{{ documents.length }} indexed</span>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Documents</h1>
           <p class="ck-page-header__sub">Indexed knowledge chunks available to your bots</p>
+        </div>
+        <div class="ck-page-header__actions">
+          <span class="ck-badge ck-badge--default">{{ documents.length }} indexed</span>
         </div>
       </div>
 
@@ -34,13 +26,13 @@ import { DocumentItem } from "../../core/models";
           <span class="ck-search-icon">⌕</span>
           <input class="ck-input ck-search" type="text" placeholder="Search documents..." [(ngModel)]="searchQuery" />
         </div>
-        <select class="ck-select" style="width: auto; min-width: 140px;" [(ngModel)]="filterBot">
+        <select class="ck-select ck-auto-157" [(ngModel)]="filterBot">
           <option value="">All bots</option>
           @for (key of botKeys; track key) {
             <option [value]="key">{{ key }}</option>
           }
         </select>
-        <select class="ck-select" style="width: auto; min-width: 120px;" [(ngModel)]="filterType">
+        <select class="ck-select ck-auto-035" [(ngModel)]="filterType">
           <option value="">All types</option>
           <option value="web">Web</option>
           <option value="pdf">PDF</option>
@@ -51,7 +43,7 @@ import { DocumentItem } from "../../core/models";
       @if (loading) {
         <div class="ck-card">
           @for (i of [1,2,3,4,5]; track i) {
-            <div class="ck-skeleton" style="height: 44px; margin-bottom: 8px;"></div>
+            <div class="ck-skeleton ck-auto-031"></div>
           }
         </div>
       } @else if (filtered.length > 0) {
@@ -71,23 +63,23 @@ import { DocumentItem } from "../../core/models";
               @for (doc of filtered; track doc.id) {
                 <tr>
                   <td>
-                    <div class="ck-table__cell--strong" style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="doc.title">
+                    <div class="ck-table__cell--strong ck-auto-158" [title]="doc.title">
                       {{ doc.title }}
                     </div>
                     <a
                       [href]="doc.canonicalUrl"
                       target="_blank"
                       rel="noopener"
-                      style="font-size: 0.72rem; color: var(--ck-text-muted); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 280px;"
+                      class="ck-auto-159"
                     >
                       {{ doc.canonicalUrl }}
                     </a>
                   </td>
                   <td><span class="ck-badge ck-badge--accent">{{ doc.projectKey }}</span></td>
-                  <td class="ck-table__cell--mono" style="font-size: 0.75rem;">{{ doc.sourceKey }}</td>
-                  <td style="color: var(--ck-text-muted);">{{ doc.language }}</td>
-                  <td style="color: var(--ck-text-muted);">v{{ doc.currentVersion }}</td>
-                  <td style="color: var(--ck-text-muted); font-size: 0.78rem;">
+                  <td class="ck-table__cell--mono ck-auto-147">{{ doc.sourceKey }}</td>
+                  <td class="ck-auto-073">{{ doc.language }}</td>
+                  <td class="ck-auto-073">v{{ doc.currentVersion }}</td>
+                  <td class="ck-auto-010">
                     {{ doc.lastIngestedAt ? (doc.lastIngestedAt | date: 'MMM d, HH:mm') : '—' }}
                   </td>
                 </tr>
@@ -95,7 +87,7 @@ import { DocumentItem } from "../../core/models";
             </tbody>
           </table>
         </div>
-        <p style="font-size: 0.78rem; color: var(--ck-text-muted); margin-top: 12px;">
+        <p class="ck-auto-160">
           Showing {{ filtered.length }} of {{ documents.length }} documents
         </p>
       } @else {

@@ -23,15 +23,19 @@ import {
   PortalSettings,
   PortalUser,
   Project,
+  ProjectDetail,
   AnalyticsTrends,
   ChannelItem,
+  CrawlResult,
   RagQualityStats,
   SatisfactionStats,
   SourceItem,
   Tenant,
   TestChatResponse,
+  UploadedAsset,
   Webhook,
   WebhookCreated,
+  WebsiteIntegrationResult,
   WorkspaceMember,
 } from "./models";
 
@@ -143,6 +147,14 @@ export class PortalApiService {
     );
   }
 
+  tenantProject(tenantId: string, projectKey: string): Promise<ProjectDetail> {
+    return firstValueFrom(
+      this.http.get<ProjectDetail>(this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}`), {
+        withCredentials: true,
+      })
+    );
+  }
+
   upsertTenantProject(tenantId: string, payload: Record<string, unknown>): Promise<Project> {
     return firstValueFrom(
       this.http.post<Project>(this.url(`/v1/portal/tenants/${tenantId}/projects`), payload, {
@@ -151,15 +163,37 @@ export class PortalApiService {
     );
   }
 
+  updateTenantProject(tenantId: string, projectKey: string, payload: Record<string, unknown>): Promise<ProjectDetail> {
+    return firstValueFrom(
+      this.http.put<ProjectDetail>(this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}`), payload, {
+        withCredentials: true,
+      })
+    );
+  }
+
   projectSnippet(tenantId: string, projectKey: string): Promise<{
     siteKey: string;
     apiBase: string;
-    widgetBase: string;
+    widgetBaseUrl: string;
     snippet: string;
   }> {
     return firstValueFrom(
-      this.http.get<{ siteKey: string; apiBase: string; widgetBase: string; snippet: string }>(
+      this.http.get<{ siteKey: string; apiBase: string; widgetBaseUrl: string; snippet: string }>(
         this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/snippet`),
+        { withCredentials: true }
+      )
+    );
+  }
+
+  provisionWebsiteIntegration(
+    tenantId: string,
+    projectKey: string,
+    baseUrl: string
+  ): Promise<WebsiteIntegrationResult> {
+    return firstValueFrom(
+      this.http.post<WebsiteIntegrationResult>(
+        this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/website-integration`),
+        { baseUrl },
         { withCredentials: true }
       )
     );
@@ -179,6 +213,48 @@ export class PortalApiService {
       this.http.post<SourceItem>(this.url(`/v1/portal/tenants/${tenantId}/sources`), payload, {
         withCredentials: true,
       })
+    );
+  }
+
+  uploadKnowledgeDocument(
+    tenantId: string,
+    projectKey: string,
+    file: File,
+    sourceKey?: string
+  ): Promise<UploadedAsset> {
+    const headers: Record<string, string> = {
+      "x-upload-filename": encodeURIComponent(file.name),
+      "x-upload-mime-type": file.type || "application/octet-stream",
+    };
+    if (sourceKey) {
+      headers["x-source-key"] = sourceKey;
+    }
+
+    return firstValueFrom(
+      this.http.post<UploadedAsset>(
+        this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/assets/document`),
+        file,
+        {
+          headers,
+          withCredentials: true,
+        }
+      )
+    );
+  }
+
+  uploadBotLogo(tenantId: string, file: File): Promise<UploadedAsset> {
+    return firstValueFrom(
+      this.http.post<UploadedAsset>(
+        this.url(`/v1/portal/tenants/${tenantId}/assets/logo`),
+        file,
+        {
+          headers: {
+            "x-upload-filename": encodeURIComponent(file.name),
+            "x-upload-mime-type": file.type || "application/octet-stream",
+          },
+          withCredentials: true,
+        }
+      )
     );
   }
 
@@ -482,11 +558,47 @@ export class PortalApiService {
     return firstValueFrom(this.http.get<ChannelItem[]>(this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/channels`), { withCredentials: true }));
   }
 
-  createTelegramChannel(tenantId: string, projectKey: string, botToken: string): Promise<{ id: string; webhookUrl: string }> {
-    return firstValueFrom(this.http.post<{ id: string; webhookUrl: string }>(this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/channels`), { botToken }, { withCredentials: true }));
+  createChannel(
+    tenantId: string,
+    projectKey: string,
+    payload:
+      | {
+          kind: "telegram";
+          botToken: string;
+          label?: string;
+        }
+      | {
+          kind: "whatsapp";
+          label?: string;
+          accessToken: string;
+          phoneNumberId: string;
+          businessAccountId?: string;
+          verifyToken: string;
+          appSecret?: string;
+          displayPhoneNumber?: string;
+        }
+  ): Promise<ChannelItem> {
+    return firstValueFrom(
+      this.http.post<ChannelItem>(
+        this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/channels`),
+        payload,
+        { withCredentials: true }
+      )
+    );
   }
 
   deleteChannel(tenantId: string, projectKey: string, channelId: string): Promise<{ ok: boolean }> {
     return firstValueFrom(this.http.delete<{ ok: boolean }>(this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/channels/${channelId}`), { withCredentials: true }));
+  }
+
+  // --- V4: Crawl ---
+  crawl(tenantId: string, projectKey: string, url: string): Promise<CrawlResult> {
+    return firstValueFrom(
+      this.http.post<CrawlResult>(
+        this.url(`/v1/portal/tenants/${tenantId}/projects/${projectKey}/crawl`),
+        { url },
+        { withCredentials: true }
+      )
+    );
   }
 }

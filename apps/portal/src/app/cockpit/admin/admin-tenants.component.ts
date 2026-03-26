@@ -11,7 +11,7 @@ import { Tenant } from "../../core/models";
   template: `
     <div class="ck-topbar">
       <div class="ck-topbar__breadcrumb">
-        <a routerLink="/admin/overview" style="color: var(--ck-text-muted); text-decoration: none;">Superadmin</a>
+        <a routerLink="/admin/overview" class="ck-auto-008">Superadmin</a>
         <span>›</span>
         <strong>Tenants</strong>
       </div>
@@ -41,7 +41,7 @@ import { Tenant } from "../../core/models";
           @if (loading) {
             <div class="ck-card">
               @for (i of [1,2,3,4]; track i) {
-                <div class="ck-skeleton" style="height: 44px; margin-bottom: 8px;"></div>
+                <div class="ck-skeleton ck-auto-031"></div>
               }
             </div>
           } @else if (filtered.length > 0) {
@@ -65,7 +65,7 @@ import { Tenant } from "../../core/models";
                           <span class="ck-dot"></span>{{ tenant.status }}
                         </span>
                       </td>
-                      <td style="color: var(--ck-text-muted); font-size: 0.72rem; font-family: ui-monospace;">
+                      <td class="ck-auto-032">
                         {{ tenant.id.slice(0, 8) }}…
                       </td>
                     </tr>
@@ -89,10 +89,10 @@ import { Tenant } from "../../core/models";
             <p class="ck-card__title">Create Tenant</p>
           </div>
           @if (createSuccess) {
-            <div class="ck-alert ck-alert--success" style="margin-bottom: 12px;">Tenant created.</div>
+            <div class="ck-alert ck-alert--success ck-auto-033">Tenant created.</div>
           }
           @if (createError) {
-            <div class="ck-alert ck-alert--danger" style="margin-bottom: 12px;">{{ createError }}</div>
+            <div class="ck-alert ck-alert--danger ck-auto-033">{{ createError }}</div>
           }
           <div class="ck-form-stack">
             <div class="ck-field">
@@ -103,7 +103,7 @@ import { Tenant } from "../../core/models";
               <label class="ck-label">Slug</label>
               <input class="ck-input" [(ngModel)]="form.slug" placeholder="acme-corp" />
             </div>
-            <button class="ck-btn ck-btn--primary" style="width: 100%;" (click)="create()" [disabled]="creating">
+            <button class="ck-btn ck-btn--primary ck-auto-034" (click)="create()" [disabled]="creating">
               {{ creating ? 'Creating…' : 'Create Tenant' }}
             </button>
           </div>

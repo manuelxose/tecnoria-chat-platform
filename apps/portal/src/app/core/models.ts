@@ -1,5 +1,46 @@
 export type TenantRole = "admin" | "editor" | "viewer";
 export type PlatformRole = "superadmin" | "member";
+export type WidgetPresetKey = "indigo" | "violet" | "midnight" | "aurora";
+export type WidgetLauncherShape = "pill" | "rounded" | "compact";
+export type WidgetButtonStyle = "solid" | "glass" | "outline";
+
+export interface AssistantProfile {
+  positioningStatement: string;
+  serviceCatalog: string[];
+  qualificationGoals: string[];
+  nextStepRules: string[];
+  servicePromptLibrary: string[];
+}
+
+export interface RuntimePolicy {
+  posture: string;
+  scope: string;
+  roadmapDepth: string;
+  maxMobileSuggestions: number;
+  maxDesktopSuggestions: number;
+  commercialIntentThreshold: number;
+  hideStartersAfterFirstUserMessage: boolean;
+}
+
+export interface WebsiteIntegrationResult {
+  detectedMode: "sitemap" | "html";
+  sourceKey: string;
+  entryUrl: string;
+  allowedDomains: string[];
+  ingestionJobId: string;
+  snippet: string;
+}
+
+export interface WidgetSuggestionItem {
+  label: string;
+  prompt: string;
+  kind: "service" | "qualification" | "follow_up" | "contact";
+}
+
+export interface WidgetSuggestionBlock {
+  slot: "follow_up" | "services" | "qualification";
+  items: WidgetSuggestionItem[];
+}
 
 export interface PortalSettings {
   brandName: string;
@@ -83,6 +124,8 @@ export interface Project {
   promptPolicy: {
     tone: string;
     outOfScopeMessage: string;
+    guardrails?: string[];
+    disallowPricing?: boolean;
   };
   ctaConfig: {
     primaryLabel: string;
@@ -92,17 +135,54 @@ export interface Project {
     salesKeywords: string[];
   };
   widgetTheme: {
+    presetKey?: WidgetPresetKey;
     accentColor: string;
     surfaceColor: string;
     textColor: string;
     launcherLabel: string;
+    launcherEyebrow?: string;
+    launcherIcon?: string;
+    launcherShape?: WidgetLauncherShape;
+    buttonStyle?: WidgetButtonStyle;
+    botCopy?: string;
     logoUrl?: string;
     removeBranding?: boolean;
     proactiveMessage?: string;
     proactiveDelaySeconds?: number;
+    composerPlaceholder?: string;
+    sendButtonLabel?: string;
   };
   enableHandover?: boolean;
+  aiConfig?: AiConfig;
   languageMode?: "fixed" | "auto";
+  starterQuestions?: string[];
+}
+
+export interface CrawlBrandSignals {
+  siteName: string;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  dominantColors: string[];
+  language: string;
+  copyHints: string[];
+}
+
+export interface CrawlResult {
+  baseUrl: string;
+  pages: string[];
+  metadata: {
+    title: string;
+    description: string;
+    language: string;
+  };
+  brandSignals: CrawlBrandSignals;
+}
+
+export interface ProjectDetail extends Project {
+  aiConfig: AiConfig;
+  starterQuestions: string[];
+  assistantProfile?: AssistantProfile;
+  runtimePolicy?: RuntimePolicy;
 }
 
 export interface SourceItem {
@@ -117,6 +197,8 @@ export interface SourceItem {
   visibility: string;
   default_category?: string | null;
   defaultCategory?: string | null;
+  source_config?: Record<string, unknown>;
+  sourceConfig?: Record<string, unknown>;
 }
 
 export interface IngestionItem {
@@ -161,6 +243,10 @@ export interface ConversationItem {
   messageCount: number;
   lastMessageAt?: string | null;
   projectKey: string;
+  lastMessagePreview?: string | null;
+  lastMessageRole?: string | null;
+  channelKind?: "widget" | "telegram" | "whatsapp" | "other";
+  contactLabel?: string | null;
 }
 
 export interface MessageItem {
@@ -353,4 +439,20 @@ export interface ChannelItem {
   status: "active" | "paused";
   has_token: boolean;
   created_at: string;
+  webhookUrl?: string | null;
+  verified?: boolean;
+  label?: string | null;
+  phoneNumber?: string | null;
+  projectKey?: string;
+  lastError?: string | null;
+  configSummary?: Record<string, unknown>;
+}
+
+export interface UploadedAsset {
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  sourceKey?: string;
+  jobId?: string;
 }

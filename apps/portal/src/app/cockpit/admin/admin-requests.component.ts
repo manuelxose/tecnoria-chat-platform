@@ -9,17 +9,6 @@ import { AccessRequest } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <a routerLink="/admin/overview" style="color: var(--ck-text-muted); text-decoration: none;">Superadmin</a>
-        <span>›</span>
-        <strong>Access Requests</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="load()">↻ Refresh</button>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
@@ -28,10 +17,11 @@ import { AccessRequest } from "../../core/models";
         </div>
         <div class="ck-page-header__actions">
           <span class="ck-badge ck-badge--warning">{{ pendingRequests.length }} pending</span>
+          <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="load()">↻ Refresh</button>
         </div>
       </div>
 
-      <div class="ck-tabs" style="margin-bottom: 20px;">
+      <div class="ck-tabs ck-auto-019">
         <button class="ck-tab" [class.is-active]="activeTab === 'pending'" (click)="activeTab = 'pending'">
           Pending ({{ pendingRequests.length }})
         </button>
@@ -43,20 +33,20 @@ import { AccessRequest } from "../../core/models";
       @if (loading) {
         <div class="ck-card">
           @for (i of [1,2,3]; track i) {
-            <div class="ck-skeleton" style="height: 80px; margin-bottom: 10px;"></div>
+            <div class="ck-skeleton ck-auto-020"></div>
           }
         </div>
       } @else if (visibleRequests.length > 0) {
-        <div style="display: grid; gap: 10px;">
+        <div class="ck-auto-021">
           @for (req of visibleRequests; track req.id) {
             <div class="ck-card ck-card--compact">
-              <div style="display: flex; align-items: flex-start; gap: 16px;">
-                <div style="flex: 1;">
-                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                    <strong style="color: var(--ck-text); font-size: 0.95rem;">{{ req.company }}</strong>
+              <div class="ck-auto-022">
+                <div class="ck-auto-023">
+                  <div class="ck-auto-024">
+                    <strong class="ck-auto-025">{{ req.company }}</strong>
                     <span class="ck-badge" [class]="statusBadge(req.status)">{{ req.status }}</span>
                   </div>
-                  <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.82rem; color: var(--ck-text-soft); margin-bottom: 6px;">
+                  <div class="ck-auto-026">
                     <span>{{ req.name }}</span>
                     <span>·</span>
                     <span>{{ req.email }}</span>
@@ -68,18 +58,18 @@ import { AccessRequest } from "../../core/models";
                     <span>{{ req.createdAt | date: 'MMM d, yyyy' }}</span>
                   </div>
                   @if (req.message) {
-                    <p style="font-size: 0.82rem; color: var(--ck-text-muted); margin: 0; padding: 8px 10px; background: var(--ck-surface-raised); border-radius: var(--ck-radius-sm);">
+                    <p class="ck-auto-027">
                       "{{ req.message }}"
                     </p>
                   }
                   @if (req.reviewNotes) {
-                    <p style="font-size: 0.78rem; color: var(--ck-text-muted); margin: 6px 0 0;">
+                    <p class="ck-auto-028">
                       Notes: {{ req.reviewNotes }}
                     </p>
                   }
                 </div>
                 @if (req.status === 'pending') {
-                  <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                  <div class="ck-auto-029">
                     <button class="ck-btn ck-btn--danger ck-btn--sm" (click)="reject(req)" [disabled]="processingId === req.id">
                       Reject
                     </button>

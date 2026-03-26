@@ -455,9 +455,9 @@ export class TenantDashboardPageComponent implements OnInit {
     ctaPrimaryLabel: "Pedir reunion",
     ctaPrimaryUrl: "",
     launcherLabel: "Hablar con el asistente",
-    accentColor: "#00c2a8",
-    surfaceColor: "#09111f",
-    textColor: "#f5f7fb",
+    accentColor: "#6366f1",
+    surfaceColor: "#0f172a",
+    textColor: "#f8fafc",
     promptTone: "profesional, sobrio y orientado a negocio",
   };
 

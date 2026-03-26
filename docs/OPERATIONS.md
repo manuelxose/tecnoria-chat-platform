@@ -1,78 +1,80 @@
 # Platform operations
 
+## Canonical runtime
+
+Talkaris boots from tracked source only:
+
+- `apps/chat-api/src/main.ts`
+- `apps/chat-api/src/runtime-base.ts`
+- `apps/ingest-worker/src/main.ts`
+- `apps/ingest-worker/src/runtime-base.ts`
+
+No source file may import `dist/...` artifacts.
+
 ## Base flow
 
 1. Start `postgres`, `chat-api`, `widget`, `portal` and `ingest-worker`.
 2. Run chat API migrations.
-3. Seed Talkaris defaults, demo project and portal superadmin.
-4. Register or update projects by tenant.
-5. Register sources per project.
-6. Queue ingestion jobs.
-7. Validate answers, leads and analytics.
-8. Generate the widget snippet from tenant console and embed it in the target application.
+3. Seed Talkaris defaults and a portal superadmin.
+4. Create or update the tenant project.
+5. Run `website-integration` for the public site.
+6. Validate queued ingestion, indexed documents, widget answers and analytics.
+7. Copy the canonical widget snippet into the target website.
 
 ## Core commands
 
 ```bash
 npm install
 npm run migrate -w @tecnoria-chat/chat-api
-npm run cli -- create-tenant --slug platform-default --name "Talkaris Platform"
-npm run cli -- seed-talkaris --tenant platform-default
 SUPERADMIN_EMAIL=admin@talkaris.com SUPERADMIN_PASSWORD=change-me-please npm run seed:talkaris -w @tecnoria-chat/chat-api
+npm run build -w @tecnoria-chat/chat-api
+npm run build -w @tecnoria-chat/ingest-worker
+npm run build -w @tecnoria-chat/portal
+npm run build -w @tecnoria-chat/widget
 npm run dev:api
-npm run dev:widget
 npm run dev:portal
+npm run dev:widget
 npm run dev:ingest
 ```
 
-## Portal access flow
+## Tenant onboarding
 
-1. A visitor requests a demo at `/solicitar-demo` or `/en/request-demo`.
-2. Superadmin reviews `access_requests` in `/admin`.
-3. On approval:
-   - the tenant is created or updated,
-   - the user is created or updated,
-   - the `admin` membership is assigned,
-   - an activation or reset token is issued.
-4. The user completes activation in `/reset-password`.
-5. The user enters `/app`.
+The default production flow is website-first:
 
-## Tenant flow
+1. Create the bot/project in the portal.
+2. Call `POST /v1/portal/tenants/:tenantId/projects/:projectKey/website-integration`.
+3. Let Talkaris detect sitemap or fall back to root crawl.
+4. Review the queued ingestion job.
+5. Embed the returned snippet.
 
-1. Create or update a `project`.
-2. Register a `source`.
-3. Queue an `ingestion`.
-4. Review indexed documents, leads, conversations and analytics.
-5. Generate the widget snippet and embed it in the external application.
+Advanced sources remain supported under Knowledge Sources, but they are no longer the primary onboarding path for public websites.
 
 ## Operational routes
 
 - Portal: `http://localhost:4103`
 - Portal health: `http://localhost:4103/health`
-- Robots: `http://localhost:4103/robots.txt`
-- Sitemap: `http://localhost:4103/sitemap.xml`
 - API health: `http://localhost:4101/health`
 - Widget loader: `http://localhost:4102/embed.js`
 - Public platform config: `GET /v1/public/platform`
-- Access requests: `POST /v1/public/access-requests`
 - Auth: `/v1/auth/*`
 - Tenant console: `/v1/portal/tenants/:tenantId/*`
 - Superadmin: `/v1/admin/*`
 
 ## Guardrails
 
-- Only authorised domains are indexed by each `project`.
-- The widget never queries knowledge from another `project`.
-- The portal only allows read or write operations inside the authorised tenant, except for `superadmin`.
-- Public access, login and reset endpoints are rate limited by IP.
-- Private and conversion pages are `noindex`; only public marketing pages are indexable.
+- The website integration flow only accepts public `http(s)` URLs.
+- `allowedDomains` are inferred from the website host and persisted on the project.
+- The widget only uses `window.TalkarisWidgetConfig`.
+- Analytics queries read from the current schema: `analytics_events.payload`, `messages`, `lead_events`, `conversation_ratings`, `handover_events`.
 
-## Pending items
+## Verification
 
-- Validate the full flow on the real `talkaris.com` domain behind Cloudflare.
-- Provision SMTP for `hello@talkaris.com` and verify delivery for approval/reset emails.
-- Add end-to-end smoke automation for access request -> approval -> reset -> login.
+Run these before a production deployment:
 
-## Recommended next step
-
-Run a full local walkthrough with the seeded Talkaris demo: home -> request access -> approve from superadmin -> reset -> login -> create project -> generate snippet -> test widget on an external page.
+```bash
+npm run build -w @tecnoria-chat/chat-api
+npm run build -w @tecnoria-chat/ingest-worker
+npm run build -w @tecnoria-chat/portal
+npm run build -w @tecnoria-chat/widget
+node --import tsx --test src/design-governance.test.ts
+```

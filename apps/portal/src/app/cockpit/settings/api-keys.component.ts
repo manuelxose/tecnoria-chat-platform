@@ -28,30 +28,30 @@ import { ApiKey } from "../../core/models";
       </div>
 
       @if (newKey) {
-        <div class="ck-card" style="margin-bottom: 20px; border-color: var(--ck-accent-soft);">
-          <p class="ck-card__title" style="margin-bottom: 8px;">Key created — copy it now, it won't be shown again</p>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <code style="flex: 1; font-family: ui-monospace; font-size: 0.82rem; background: var(--ck-surface-high); padding: 10px 14px; border-radius: var(--ck-radius-sm); color: var(--ck-accent-strong); word-break: break-all;">{{ newKey }}</code>
+        <div class="ck-card ck-auto-175">
+          <p class="ck-card__title ck-auto-176">Key created — copy it now, it won't be shown again</p>
+          <div class="ck-auto-177">
+            <code class="ck-auto-178">{{ newKey }}</code>
             <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="copyKey()">{{ copied ? '✓' : 'Copy' }}</button>
           </div>
         </div>
       }
 
       @if (createOpen) {
-        <div class="ck-card" style="margin-bottom: 20px;">
-          <p class="ck-card__title" style="margin-bottom: 12px;">New API Key</p>
-          <div style="display: grid; gap: 10px; max-width: 480px;">
+        <div class="ck-card ck-auto-019">
+          <p class="ck-card__title ck-auto-033">New API Key</p>
+          <div class="ck-auto-165">
             <input class="ck-input" placeholder="Key name" [(ngModel)]="form.name" />
             <div>
-              <p style="font-size: 0.82rem; color: var(--ck-text-soft); margin-bottom: 6px;">Scopes</p>
+              <p class="ck-auto-166">Scopes</p>
               @for (scope of availableScopes; track scope) {
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; margin-bottom: 4px; cursor: pointer;">
+                <label class="ck-auto-168">
                   <input type="checkbox" [checked]="form.scopes.includes(scope)" (change)="toggleScope(scope)" />
                   {{ scope }}
                 </label>
               }
             </div>
-            <div style="display: flex; gap: 10px;">
+            <div class="ck-auto-169">
               <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="create()" [disabled]="creating || !form.name">
                 {{ creating ? 'Creating…' : 'Create Key' }}
               </button>
@@ -77,23 +77,23 @@ import { ApiKey } from "../../core/models";
           <tbody>
             @for (k of keys; track k.id) {
               <tr>
-                <td style="font-size: 0.84rem; font-weight: 500;">{{ k.name }}</td>
-                <td><code style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ k.prefix }}…</code></td>
+                <td class="ck-auto-170">{{ k.name }}</td>
+                <td><code class="ck-auto-171">{{ k.prefix }}…</code></td>
                 <td>
                   @for (s of k.scopes; track s) {
-                    <span class="ck-badge ck-badge--default" style="margin-right: 4px; font-size: 0.75rem;">{{ s }}</span>
+                    <span class="ck-badge ck-badge--default ck-auto-179">{{ s }}</span>
                   }
-                  @if (!k.scopes.length) { <span style="color: var(--ck-text-muted); font-size: 0.8rem;">all</span> }
+                  @if (!k.scopes.length) { <span class="ck-auto-038">all</span> }
                 </td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ k.lastUsedAt ? (k.lastUsedAt | slice:0:10) : '—' }}</td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ k.expiresAt ? (k.expiresAt | slice:0:10) : 'Never' }}</td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ k.createdAt | slice:0:10 }}</td>
+                <td class="ck-auto-171">{{ k.lastUsedAt ? (k.lastUsedAt | slice:0:10) : '—' }}</td>
+                <td class="ck-auto-171">{{ k.expiresAt ? (k.expiresAt | slice:0:10) : 'Never' }}</td>
+                <td class="ck-auto-171">{{ k.createdAt | slice:0:10 }}</td>
                 <td>
-                  <button class="ck-btn ck-btn--ghost ck-btn--sm" style="color: var(--ck-red);" (click)="revoke(k)">Revoke</button>
+                  <button class="ck-btn ck-btn--ghost ck-btn--sm ck-auto-106" (click)="revoke(k)">Revoke</button>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="7" style="text-align: center; color: var(--ck-text-muted);">No API keys yet</td></tr>
+              <tr><td colspan="7" class="ck-auto-137">No API keys yet</td></tr>
             }
           </tbody>
         </table>

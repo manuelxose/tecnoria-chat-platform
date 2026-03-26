@@ -10,7 +10,7 @@ import { CockpitStore } from "../cockpit-store.service";
   standalone: true,
   imports: [RouterOutlet, RouterModule, FormsModule],
   template: `
-    <div class="ck-shell">
+    <div class="ck-surface--cockpit ck-shell">
       <!-- SIDEBAR -->
       <aside class="ck-sidebar">
         <!-- Brand -->
@@ -149,7 +149,28 @@ import { CockpitStore } from "../cockpit-store.service";
 
       <!-- MAIN -->
       <main class="ck-main">
-        <router-outlet />
+        <header class="ck-appbar">
+          <div class="ck-appbar__meta">
+            <p class="ck-appbar__eyebrow">{{ shellModeLabel }}</p>
+            <div class="ck-appbar__breadcrumb">
+              <span>{{ shellSection }}</span>
+              <span>›</span>
+              <strong>{{ shellTitle }}</strong>
+            </div>
+          </div>
+          <div class="ck-appbar__actions">
+            @if (store.activeTenant()?.name) {
+              <span class="ck-badge ck-badge--default">{{ store.activeTenant()?.name }}</span>
+            }
+            <span class="ck-badge ck-badge--accent">{{ session.user()?.platformRole }}</span>
+          </div>
+        </header>
+
+        <section class="ck-workbench">
+          <div class="ck-route-host">
+            <router-outlet />
+          </div>
+        </section>
       </main>
     </div>
   `,
@@ -180,5 +201,26 @@ export class CockpitShellComponent implements OnInit {
   async logout(): Promise<void> {
     await this.session.logout();
     window.location.href = "/login";
+  }
+
+  get shellModeLabel(): string {
+    return "Workspace";
+  }
+
+  get shellSection(): string {
+    return this.routeData("section", "Workspace");
+  }
+
+  get shellTitle(): string {
+    return this.routeData("title", "Dashboard");
+  }
+
+  private routeData(key: string, fallback: string): string {
+    let snapshot = this.router.routerState.snapshot.root;
+    while (snapshot.firstChild) {
+      snapshot = snapshot.firstChild;
+    }
+    const value = snapshot.data[key];
+    return typeof value === "string" && value.trim() ? value : fallback;
   }
 }

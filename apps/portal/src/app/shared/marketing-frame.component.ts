@@ -25,7 +25,7 @@ import { LogoBarComponent } from "./logo-bar.component";
       </div>
     </div>
 
-    <div class="marketing-shell">
+    <div class="ck-surface--marketing marketing-shell">
       <header class="site-header-wrap">
         <div class="site-shell">
           <div class="site-header">
@@ -142,72 +142,7 @@ import { LogoBarComponent } from "./logo-bar.component";
         </div>
       </footer>
     </div>
-  `,
-  styles: [`
-    .sticky-cta {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 900;
-      background: var(--surface-dark, #081424);
-      color: #fff;
-      transform: translateY(100%);
-      transition: transform 0.3s ease;
-    }
-    .sticky-cta--visible { transform: translateY(0); }
-    .sticky-cta__inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0.75rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      font-size: 0.9rem;
-    }
-    .sticky-cta__inner span { flex: 1; }
-    .sticky-cta__close {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.6);
-      cursor: pointer;
-      font-size: 1rem;
-      padding: 0.25rem;
-      line-height: 1;
-    }
-    .sticky-cta__close:hover { color: #fff; }
-    .button-primary--sm {
-      padding: 0.5rem 1rem;
-      font-size: 0.85rem;
-      white-space: nowrap;
-    }
-    .footer-trust-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    .trust-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.25rem 0.6rem;
-      border-radius: 4px;
-      border: 1px solid color-mix(in srgb, var(--gold, #c29a52) 40%, transparent);
-      color: var(--gold, #c29a52);
-    }
-    .site-footer__legal {
-      margin-top: 2rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      opacity: 0.6;
-    }
-    .site-footer__sep { opacity: 0.4; }
-  `],
-})
+  `})
 export class MarketingFrameComponent implements OnInit {
   @Input({ required: true }) locale: PublicLocale = "es";
   @Input({ required: true }) platform!: PortalSettings;

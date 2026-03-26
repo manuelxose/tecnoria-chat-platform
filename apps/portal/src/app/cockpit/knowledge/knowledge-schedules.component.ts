@@ -10,51 +10,43 @@ import { IngestionSchedule, SourceItem } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <span>Knowledge</span>
-        <span>›</span>
-        <strong>Schedules</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge">Sources</a>
-        <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge/ingestions">Jobs</a>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Ingestion Schedules</h1>
           <p class="ck-page-header__sub">Automatically re-crawl knowledge sources on a schedule</p>
         </div>
-        <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="createOpen = !createOpen">+ New Schedule</button>
+        <div class="ck-page-header__actions">
+          <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge">Sources</a>
+          <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/knowledge/ingestions">Jobs</a>
+          <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="createOpen = !createOpen">+ New Schedule</button>
+        </div>
       </div>
 
       @if (createOpen) {
-        <div class="ck-card" style="margin-bottom: 20px;">
-          <p class="ck-card__title" style="margin-bottom: 12px;">New Schedule</p>
-          <div style="display: grid; gap: 10px; max-width: 480px;">
+        <div class="ck-card ck-auto-019">
+          <p class="ck-card__title ck-auto-033">New Schedule</p>
+          <div class="ck-auto-165">
             <input class="ck-input" placeholder="Schedule name" [(ngModel)]="form.name" />
             <div>
-              <p style="font-size: 0.82rem; color: var(--ck-text-soft); margin-bottom: 6px;">Cron expression</p>
-              <input class="ck-input" placeholder="0 2 * * *  (daily at 2am)" [(ngModel)]="form.cronExpr" style="font-family: ui-monospace;" />
-              <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+              <p class="ck-auto-166">Cron expression</p>
+              <input class="ck-input ck-auto-078" placeholder="0 2 * * *  (daily at 2am)" [(ngModel)]="form.cronExpr"  />
+              <div class="ck-auto-167">
                 @for (preset of cronPresets; track preset.label) {
-                  <button class="ck-btn ck-btn--ghost ck-btn--sm" style="font-size: 0.75rem;" (click)="form.cronExpr = preset.value">{{ preset.label }}</button>
+                  <button class="ck-btn ck-btn--ghost ck-btn--sm ck-auto-147" (click)="form.cronExpr = preset.value">{{ preset.label }}</button>
                 }
               </div>
             </div>
             <div>
-              <p style="font-size: 0.82rem; color: var(--ck-text-soft); margin-bottom: 6px;">Sources to include</p>
+              <p class="ck-auto-166">Sources to include</p>
               @for (src of sources; track src.id) {
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.84rem; margin-bottom: 4px; cursor: pointer;">
+                <label class="ck-auto-168">
                   <input type="checkbox" [checked]="form.sourceIds.includes(src.id)" (change)="toggleSource(src.id)" />
-                  {{ src.sourceKey ?? src.source_key }} <span class="ck-badge ck-badge--accent" style="font-size: 0.72rem;">{{ src.projectKey }}</span>
+                  {{ src.sourceKey ?? src.source_key }} <span class="ck-badge ck-badge--accent ck-auto-135">{{ src.projectKey }}</span>
                 </label>
               }
             </div>
-            <div style="display: flex; gap: 10px;">
+            <div class="ck-auto-169">
               <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="create()" [disabled]="creating || !form.name || !form.cronExpr || !form.sourceIds.length">
                 {{ creating ? 'Creating…' : 'Create Schedule' }}
               </button>
@@ -80,25 +72,25 @@ import { IngestionSchedule, SourceItem } from "../../core/models";
           <tbody>
             @for (s of schedules; track s.id) {
               <tr>
-                <td style="font-size: 0.84rem; font-weight: 500;">{{ s.name }}</td>
-                <td><code style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ s.cronExpr }}</code></td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ s.sourceIds.length }} source{{ s.sourceIds.length !== 1 ? 's' : '' }}</td>
+                <td class="ck-auto-170">{{ s.name }}</td>
+                <td><code class="ck-auto-171">{{ s.cronExpr }}</code></td>
+                <td class="ck-auto-171">{{ s.sourceIds.length }} source{{ s.sourceIds.length !== 1 ? 's' : '' }}</td>
                 <td>
                   <span class="ck-badge" [class]="s.active ? 'ck-badge--success' : 'ck-badge--default'">
                     {{ s.active ? 'Active' : 'Paused' }}
                   </span>
                 </td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ fmtDate(s.lastRunAt) }}</td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ fmtDate(s.nextRunAt) }}</td>
+                <td class="ck-auto-171">{{ fmtDate(s.lastRunAt) }}</td>
+                <td class="ck-auto-171">{{ fmtDate(s.nextRunAt) }}</td>
                 <td>
-                  <div style="display: flex; gap: 8px;">
+                  <div class="ck-auto-079">
                     <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="toggle(s)">{{ s.active ? 'Pause' : 'Enable' }}</button>
-                    <button class="ck-btn ck-btn--ghost ck-btn--sm" style="color: var(--ck-red);" (click)="remove(s)">Delete</button>
+                    <button class="ck-btn ck-btn--ghost ck-btn--sm ck-auto-106" (click)="remove(s)">Delete</button>
                   </div>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="7" style="text-align: center; color: var(--ck-text-muted);">No schedules configured</td></tr>
+              <tr><td colspan="7" class="ck-auto-137">No schedules configured</td></tr>
             }
           </tbody>
         </table>

@@ -297,9 +297,10 @@ current → 20260312_184850  ← symlink
 El script `publish-frontend-release.sh`:
 1. Copia staging dist a `releases/<timestamp>/`
 2. Verifica que el build es válido (existe `server.mjs`)
-3. Actualiza symlink `current` atómicamente
-4. Hace `systemctl restart` del servicio
-5. Verifica HTTP response del nuevo release
+3. Compara fingerprint del staging contra el release actual y evita publicar un release nuevo si el build es idéntico
+4. Actualiza symlink `current` atómicamente cuando hay release nuevo
+5. Hace `systemctl restart` del servicio
+6. Verifica HTTP response y confirma que el proceso arrancado está ejecutando el `server.mjs` del release esperado
 
 **Alternativas consideradas:**
 

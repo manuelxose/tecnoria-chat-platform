@@ -3,35 +3,111 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat Widget</title>
+    <title>Talkaris Widget</title>
     <style>
       :root {
-        color-scheme: light;
-        --accent: #00c2a8;
-        --surface: #081220;
-        --surface-soft: #0f1b2d;
-        --panel: #ffffff;
-        --panel-soft: #f3f7fb;
-        --text: #0f1724;
-        --muted: #5b6678;
-        --border: rgba(15, 23, 36, 0.08);
+        color-scheme: dark;
+        --accent: #6366f1;
+        --accent-alt: #8b5cf6;
+        --accent-text: #ffffff;
+        --surface: #0f172a;
+        --surface-soft: rgba(30, 41, 59, 0.92);
+        --panel: rgba(15, 23, 42, 0.9);
+        --panel-soft: rgba(30, 41, 59, 0.76);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(248, 250, 252, 0.1);
+        --border-strong: rgba(248, 250, 252, 0.16);
+        --shadow: 0 24px 64px rgba(2, 6, 23, 0.42);
+        --scrollbar-track: rgba(15, 23, 42, 0.4);
+        --scrollbar-thumb: rgba(148, 163, 184, 0.4);
       }
 
       * {
         box-sizing: border-box;
       }
 
-      body {
-        margin: 0;
-        font-family: "Segoe UI", sans-serif;
+      html {
         background: transparent;
       }
 
-      .shell {
+      body {
+        margin: 0;
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        background: transparent;
+        color: var(--text);
+        overflow: hidden;
+        width: 100vw;
         height: 100vh;
+      }
+
+      .shell {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+      }
+
+      .shell[data-preview="widget"] {
         display: flex;
-        align-items: flex-end;
-        justify-content: flex-end;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+      }
+
+      .shell[data-preview="launcher"] {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .shell[data-preview="runtime"] .launcher {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        margin: 0;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+      }
+
+      .shell[data-preview="launcher"] .launcher {
+        position: static;
+        margin: 0 auto;
+      }
+
+      .shell[data-preview="widget"] .widget {
+        width: min(100%, 390px);
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 30px;
+        border: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
+        box-shadow: 0 24px 52px rgba(2, 6, 23, 0.34);
+      }
+
+      .shell[data-preview="widget"] .header {
+        padding: 18px 18px 14px;
+      }
+
+      .shell[data-preview="widget"] .header p {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .shell[data-preview="widget"] .messages {
+        overflow: hidden;
+        padding: 16px 16px 10px;
+        gap: 10px;
+      }
+
+      .shell[data-preview="widget"] .proactive-tip,
+      .shell[data-preview="launcher"] .proactive-tip {
+        display: none !important;
       }
 
       .widget {
@@ -41,22 +117,130 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        background: var(--panel);
+        background:
+          radial-gradient(circle at top right, rgba(139, 92, 246, 0.2), transparent 34%),
+          radial-gradient(circle at top left, rgba(99, 102, 241, 0.18), transparent 30%),
+          var(--panel);
         border: 1px solid var(--border);
-        box-shadow: 0 24px 64px rgba(7, 15, 27, 0.24);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        overscroll-behavior: contain;
       }
 
       .launcher {
-        margin: auto;
-        width: 92px;
-        height: 92px;
-        border-radius: 24px;
-        border: 0;
-        background: linear-gradient(135deg, var(--accent), #2bd4a8);
-        color: #021310;
+        min-width: 224px;
+        max-width: min(380px, calc(100vw - 12px));
+        min-height: 96px;
+        border-radius: 32px;
+        border: 1px solid rgba(248, 250, 252, 0.14);
+        background:
+          linear-gradient(135deg, color-mix(in srgb, var(--accent) 94%, white 6%), color-mix(in srgb, var(--accent-alt) 94%, white 6%)),
+          rgba(15, 23, 42, 0.92);
+        color: var(--accent-text);
         font-weight: 700;
         cursor: pointer;
-        box-shadow: 0 22px 48px rgba(0, 194, 168, 0.35);
+        box-shadow:
+          0 20px 46px color-mix(in srgb, var(--accent) 26%, transparent),
+          inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        text-align: left;
+        backdrop-filter: blur(18px);
+        overflow: hidden;
+      }
+
+      .launcher[data-shape="rounded"] {
+        border-radius: 26px;
+        min-height: 96px;
+      }
+
+      .launcher[data-shape="compact"] {
+        min-width: 176px;
+        min-height: 76px;
+        border-radius: 24px;
+        padding: 12px 14px;
+        gap: 10px;
+      }
+
+      .launcher[data-shape="compact"] .launcher__mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 0.92rem;
+      }
+
+      .launcher[data-shape="compact"] .launcher__label {
+        font-size: 0.9rem;
+      }
+
+      .launcher[data-button-style="glass"] {
+        background:
+          linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.72)),
+          color-mix(in srgb, var(--accent) 20%, rgba(15, 23, 42, 0.82));
+        box-shadow:
+          0 20px 44px rgba(2, 6, 23, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      }
+
+      .launcher[data-button-style="outline"] {
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid color-mix(in srgb, var(--accent) 44%, rgba(248, 250, 252, 0.22));
+        box-shadow: 0 18px 40px color-mix(in srgb, var(--accent) 14%, transparent);
+      }
+
+      .launcher__mark {
+        width: 52px;
+        height: 52px;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.22);
+        color: var(--accent-text);
+        font-family: "Outfit", "Manrope", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        flex-shrink: 0;
+      }
+
+      .launcher__mark img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 18px;
+      }
+
+      .launcher__copy {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .launcher__eyebrow {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--accent-text) 72%, transparent);
+      }
+
+      .launcher__label {
+        font-family: "Outfit", "Manrope", sans-serif;
+        font-size: 0.98rem;
+        letter-spacing: -0.02em;
+        color: var(--accent-text);
+        line-height: 1.12;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .hidden {
@@ -67,14 +251,15 @@
         position: absolute;
         bottom: 108px;
         right: 0;
-        background: #fff;
-        color: #021310;
+        background: rgba(15, 23, 42, 0.92);
+        color: var(--text);
         border-radius: 12px 12px 2px 12px;
         padding: 10px 14px;
         font-size: 0.85rem;
         font-weight: 500;
         max-width: 200px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        border: 1px solid var(--border-strong);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.26);
         line-height: 1.4;
         animation: fadeIn 0.3s ease;
       }
@@ -86,8 +271,11 @@
 
       .header {
         padding: 18px 18px 14px;
-        background: linear-gradient(180deg, var(--surface), var(--surface-soft));
+        background:
+          linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.76)),
+          linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.12));
         color: #f7fbff;
+        border-bottom: 1px solid var(--border);
       }
 
       .header__top {
@@ -99,7 +287,9 @@
 
       .header h1 {
         margin: 0 0 6px;
-        font-size: 1.05rem;
+        font-family: "Outfit", "Manrope", sans-serif;
+        font-size: 1.18rem;
+        letter-spacing: -0.02em;
       }
 
       .header p {
@@ -110,61 +300,91 @@
 
       .icon-button {
         border: 0;
-        border-radius: 12px;
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.08);
         color: inherit;
-        width: 36px;
-        height: 36px;
+        width: 42px;
+        height: 42px;
         cursor: pointer;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      .header__logo {
+        height: 26px;
+        width: auto;
+        object-fit: contain;
+        border-radius: 6px;
+        border: 1px solid rgba(248, 250, 252, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 3px;
+        margin-bottom: 8px;
       }
 
       .body {
         flex: 1;
         min-height: 0;
-        background: radial-gradient(circle at top, rgba(0, 194, 168, 0.08), transparent 35%), var(--panel-soft);
+        background:
+          radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 32%),
+          radial-gradient(circle at top right, rgba(139, 92, 246, 0.1), transparent 28%),
+          radial-gradient(circle, rgba(148, 163, 184, 0.18) 1px, transparent 1px) center / 24px 24px,
+          var(--panel-soft);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        overscroll-behavior: contain;
       }
 
       .messages {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        padding: 16px 16px 10px;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
       }
 
       .bubble {
-        max-width: 88%;
+        max-width: 84%;
         padding: 12px 14px;
         border-radius: 18px;
-        font-size: 0.94rem;
-        line-height: 1.45;
+        font-size: 0.9rem;
+        line-height: 1.44;
         white-space: pre-wrap;
       }
 
       .bubble.bot {
-        background: #ffffff;
+        background: rgba(15, 23, 42, 0.92);
         color: var(--text);
         border: 1px solid var(--border);
         align-self: flex-start;
       }
 
       .bubble.user {
-        background: linear-gradient(135deg, var(--accent), #9ef2dd);
-        color: #04221b;
+        background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+        color: #ffffff;
         align-self: flex-end;
       }
 
       .citations,
-      .starters,
-      .lead-card {
-        padding: 0 16px 16px;
+      .lead-card,
+      .starters {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .citations {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 2px;
+        padding-bottom: 8px;
       }
 
       .citation,
-      .starter,
       .lead-card button,
       .form button {
         display: inline-flex;
@@ -172,8 +392,8 @@
         justify-content: center;
         gap: 8px;
         border-radius: 14px;
-        border: 1px solid rgba(0, 194, 168, 0.18);
-        background: #ffffff;
+        border: 1px solid rgba(248, 250, 252, 0.1);
+        background: rgba(15, 23, 42, 0.86);
         padding: 10px 12px;
         text-decoration: none;
         color: var(--text);
@@ -183,14 +403,67 @@
 
       .starters {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+        flex-wrap: nowrap;
+        gap: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-top: 2px;
+        padding-bottom: 14px;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .starters:empty {
+        display: none;
+      }
+
+      .starter {
+        flex: 0 0 auto;
+        max-width: min(208px, calc(100% - 40px));
+        min-width: 140px;
+        min-height: 42px;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 10px 12px;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.88);
+        border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.05),
+          0 10px 20px rgba(2, 6, 23, 0.16);
+        text-align: left;
+      }
+
+      .starter--contextual {
+        background: rgba(30, 41, 59, 0.72);
+        border-color: color-mix(in srgb, var(--accent) 26%, rgba(248, 250, 252, 0.08));
+      }
+
+      .starter__copy {
+        display: -webkit-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        font-size: 0.77rem;
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--text);
       }
 
       .lead-card {
         display: flex;
         flex-direction: column;
         gap: 10px;
+        padding-top: 2px;
+        padding-bottom: 14px;
+      }
+
+      .lead-card__intro {
+        font-size: 0.8rem;
+        line-height: 1.35;
+        color: var(--muted);
       }
 
       .lead-card__actions,
@@ -204,10 +477,38 @@
         text-align: center;
         text-decoration: none;
         border-radius: 14px;
-        padding: 10px 12px;
-        background: var(--accent);
-        color: #04221b;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+        color: #ffffff;
         font-weight: 600;
+      }
+
+      .widget[data-button-style="glass"] .lead-card button,
+      .widget[data-button-style="glass"] .form button,
+      .widget[data-button-style="glass"] .lead-card__actions a {
+        background: rgba(15, 23, 42, 0.78);
+        border: 1px solid rgba(248, 250, 252, 0.16);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        color: var(--text);
+      }
+
+      .widget[data-button-style="outline"] .lead-card button,
+      .widget[data-button-style="outline"] .form button,
+      .widget[data-button-style="outline"] .lead-card__actions a {
+        background: transparent;
+        border: 1px solid color-mix(in srgb, var(--accent) 48%, rgba(248, 250, 252, 0.22));
+        color: var(--text);
+        box-shadow: none;
+      }
+
+      .widget[data-button-style="outline"] .lead-card__actions a.secondary {
+        border-color: rgba(248, 250, 252, 0.14);
+      }
+
+      .lead-card__actions a.secondary {
+        background: rgba(15, 23, 42, 0.86);
+        border: 1px solid rgba(248, 250, 252, 0.1);
+        color: var(--text);
       }
 
       .lead-card__actions button {
@@ -229,17 +530,19 @@
       .form input,
       .form textarea {
         width: 100%;
-        border: 1px solid rgba(15, 23, 36, 0.12);
+        border: 1px solid var(--border);
         border-radius: 14px;
         padding: 11px 12px;
         font: inherit;
+        background: rgba(15, 23, 42, 0.82);
+        color: var(--text);
       }
 
       .composer {
-        padding: 12px 16px 16px;
+        padding: 14px 16px 16px;
         display: grid;
         gap: 10px;
-        background: #ffffff;
+        background: rgba(15, 23, 42, 0.92);
         border-top: 1px solid var(--border);
       }
 
@@ -250,13 +553,17 @@
 
       .composer textarea {
         flex: 1;
-        min-height: 54px;
-        max-height: 120px;
+        min-height: 56px;
+        max-height: 132px;
         resize: vertical;
-        border-radius: 16px;
-        border: 1px solid rgba(15, 23, 36, 0.12);
-        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        padding: 14px 16px;
         font: inherit;
+        background: rgba(30, 41, 59, 0.74);
+        color: var(--text);
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
       }
 
       .composer textarea:disabled,
@@ -267,10 +574,15 @@
 
       .composer button,
       .form button {
-        background: var(--accent);
-        color: #03201b;
+        background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+        color: var(--accent-text);
         border: 0;
         font-weight: 700;
+        min-width: 132px;
+        min-height: 56px;
+        padding: 0 24px;
+        border-radius: 18px;
+        box-shadow: 0 16px 36px color-mix(in srgb, var(--accent) 20%, transparent);
       }
 
       .status {
@@ -278,9 +590,47 @@
         color: var(--muted);
       }
 
+      body,
+      .messages {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+      }
+
+      body::-webkit-scrollbar,
+      .messages::-webkit-scrollbar,
+      .starters::-webkit-scrollbar {
+        width: 12px;
+        height: 10px;
+      }
+
+      .starters::-webkit-scrollbar {
+        display: none;
+      }
+
+      body::-webkit-scrollbar-track,
+      .messages::-webkit-scrollbar-track,
+      .starters::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+        border-radius: 999px;
+      }
+
+      body::-webkit-scrollbar-thumb,
+      .messages::-webkit-scrollbar-thumb,
+      .starters::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--scrollbar-thumb), rgba(99, 102, 241, 0.46));
+        border: 2px solid transparent;
+        border-radius: 999px;
+        background-clip: padding-box;
+      }
+
       @media (max-width: 640px) {
         .widget {
           border-radius: 24px;
+        }
+
+        .launcher {
+          max-width: min(360px, calc(100vw - 12px));
+          padding: 12px 14px;
         }
 
         .bubble {
@@ -292,14 +642,34 @@
         .composer__row {
           flex-direction: column;
         }
+
+        .messages {
+          padding: 14px 14px 8px;
+        }
+
+        .starters {
+          padding-left: 14px;
+          padding-right: 14px;
+          padding-bottom: 12px;
+        }
+
+        .composer button {
+          width: 100%;
+        }
       }
     </style>
   </head>
   <body>
     <div class="shell">
       <div id="proactive-tip" class="proactive-tip hidden"></div>
-      <button id="launcher" class="launcher" type="button">Chat</button>
-      <section id="widget" class="widget hidden" aria-live="polite">
+      <button id="launcher" class="launcher" type="button" data-shape="pill">
+        <span id="launcher-mark" class="launcher__mark">AI</span>
+        <span class="launcher__copy">
+          <span id="launcher-eyebrow" class="launcher__eyebrow">Talkaris</span>
+          <span id="launcher-label" class="launcher__label">Hablar ahora</span>
+        </span>
+      </button>
+      <section id="widget" class="widget hidden" aria-live="polite" data-button-style="solid">
         <header class="header">
           <div class="header__top">
             <div>
@@ -311,12 +681,13 @@
         </header>
         <div class="body">
           <div id="messages" class="messages"></div>
-          <div id="starters" class="starters"></div>
           <div id="citations" class="citations hidden"></div>
+          <div id="starters" class="starters"></div>
           <div id="lead-card" class="lead-card hidden">
-            <strong>Quieres llevar esto a una demo o a una conversación comercial?</strong>
+            <div id="lead-intro" class="lead-card__intro">Podemos llevar esto al siguiente paso cuando tenga sentido.</div>
             <div class="lead-card__actions">
               <a id="primary-cta" href="/solicitar-demo" target="_top" rel="noopener">Solicitar demo</a>
+              <a id="secondary-cta" class="hidden secondary" href="#" target="_top" rel="noopener"></a>
               <button id="show-form" type="button">Dejar datos</button>
               <button id="handover-btn" type="button" class="hidden">Hablar con persona</button>
             </div>
@@ -347,12 +718,16 @@
       const siteKey = params.get("siteKey");
       const parentOrigin = params.get("origin") || "*";
       const entryContext = params.get("entryContext") || "";
+      const previewMode = params.get("previewMode") || "";
       const brandLabel = params.get("brandLabel") || "la plataforma";
       const sourceSite = params.get("sourceSite") || parentOrigin;
       const contactUrl = params.get("contactUrl");
       const isMarketingEn = entryContext === "marketing-en";
       const isMarketingEs = entryContext === "marketing-es";
       const isMarketingContext = isMarketingEn || isMarketingEs || entryContext === "auctorio-marketing";
+      const isPreviewWidget = previewMode === "widget";
+      const isPreviewLauncher = previewMode === "launcher";
+      const isStudioPreview = isPreviewWidget || isPreviewLauncher;
       let fallbackContactUrl = contactUrl
         || "https://talkaris.com/solicitar-demo";
       const defaultBotCopy = isMarketingEn
@@ -365,7 +740,7 @@
         : isMarketingEs
           ? `Hola. Soy el asistente de ${brandLabel}. Puedo ayudarte a entender la plataforma, sus integraciones y cómo solicitar una demo.`
           : "Hola. ¿En qué puedo ayudarte?";
-      const starterQuestions = isMarketingEn
+      const marketingStarterQuestions = isMarketingEn
         ? [
           "What does Talkaris do exactly",
           "How does the widget integrate into a product",
@@ -391,9 +766,11 @@
       let conversationId = null;
       let lastUserMessage = "";
       let degradedMode = false;
+      let hasUserInteracted = false;
 
       const launcher = document.getElementById("launcher");
       const widget = document.getElementById("widget");
+      const shell = document.querySelector(".shell");
       const closeButton = document.getElementById("close");
       const messages = document.getElementById("messages");
       const citations = document.getElementById("citations");
@@ -402,22 +779,78 @@
       const composer = document.getElementById("composer");
       const sendButton = document.getElementById("send");
       const leadCard = document.getElementById("lead-card");
+      const leadIntro = document.getElementById("lead-intro");
       const primaryCta = document.getElementById("primary-cta");
+      const secondaryCta = document.getElementById("secondary-cta");
       const showFormButton = document.getElementById("show-form");
       const handoverBtn = document.getElementById("handover-btn");
       const leadForm = document.getElementById("lead-form");
       const botName = document.getElementById("bot-name");
       const botCopy = document.getElementById("bot-copy");
+      const launcherMark = document.getElementById("launcher-mark");
+      const launcherEyebrow = document.getElementById("launcher-eyebrow");
+      const launcherLabel = document.getElementById("launcher-label");
+
+      if (shell) {
+        shell.dataset.preview = isPreviewWidget ? "widget" : isPreviewLauncher ? "launcher" : "runtime";
+      }
 
       function notifyParent() {
-        window.parent.postMessage(
-          { type: "talkaris-chat:toggle", expanded },
-          parentOrigin === "*" ? "*" : parentOrigin
-        );
-        window.parent.postMessage(
-          { type: "tecnoria-chat:toggle", expanded },
-          parentOrigin === "*" ? "*" : parentOrigin
-        );
+        if (isStudioPreview) {
+          return;
+        }
+        const emit = () => {
+          window.parent.postMessage(
+            { type: "talkaris-chat:toggle", expanded },
+            "*"
+          );
+        };
+        emit();
+        window.setTimeout(emit, 40);
+        window.setTimeout(emit, 140);
+        window.setTimeout(emit, 320);
+        window.setTimeout(emit, 640);
+      }
+
+      function notifyLauncherSize(width, height) {
+        if (isStudioPreview) {
+          return;
+        }
+        const emit = () => {
+          window.parent.postMessage(
+            { type: "talkaris-chat:launcher", width, height },
+            "*"
+          );
+        };
+        emit();
+        window.setTimeout(emit, 40);
+        window.setTimeout(emit, 160);
+      }
+
+      function bindRuntimeScroll() {
+        const handleWheel = (event) => {
+          if (!expanded || !widget || !messages) {
+            return;
+          }
+
+          const target = event.target;
+          if (!(target instanceof Element)) {
+            return;
+          }
+
+          if (target.closest("textarea, input, .starters")) {
+            return;
+          }
+
+          if (messages.scrollHeight <= messages.clientHeight + 1) {
+            return;
+          }
+
+          event.preventDefault();
+          messages.scrollTop += event.deltaY;
+        };
+
+        widget.addEventListener("wheel", handleWheel, { passive: false });
       }
 
       function setExpanded(nextValue) {
@@ -444,9 +877,22 @@
         sendButton.disabled = !enabled;
       }
 
-      function setLeadCta(label, url, allowLeadForm) {
+      function setLeadCta(label, url, allowLeadForm, secondaryLabel, secondaryUrl, introText) {
         primaryCta.textContent = label;
         primaryCta.href = url;
+        if (leadIntro) {
+          leadIntro.textContent = introText
+            || "Podemos llevar esto al siguiente paso cuando tenga sentido.";
+        }
+        if (secondaryLabel && secondaryUrl) {
+          secondaryCta.textContent = secondaryLabel;
+          secondaryCta.href = secondaryUrl;
+          secondaryCta.classList.remove("hidden");
+        } else {
+          secondaryCta.textContent = "";
+          secondaryCta.href = "#";
+          secondaryCta.classList.add("hidden");
+        }
         leadCard.classList.remove("hidden");
         showFormButton.classList.toggle("hidden", !allowLeadForm);
         if (!allowLeadForm) {
@@ -454,10 +900,350 @@
         }
       }
 
+      function renderSuggestionTray(items, options = {}) {
+        starters.innerHTML = "";
+        const visible = Array.isArray(items) ? items.filter(Boolean) : [];
+        if (!visible.length) {
+          return;
+        }
+
+        visible.forEach((item) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `starter ${options.contextual ? "starter--contextual" : ""}`.trim();
+          button.title = item.prompt || item.label || "";
+          const copy = document.createElement("span");
+          copy.className = "starter__copy";
+          copy.textContent = item.label || item.prompt || "";
+          button.appendChild(copy);
+          button.addEventListener("click", () => sendMessage(item.prompt || item.label || ""));
+          starters.appendChild(button);
+        });
+      }
+
       function clearTransientBlocks() {
         starters.innerHTML = "";
         citations.innerHTML = "";
         citations.classList.add("hidden");
+        leadCard.classList.add("hidden");
+        leadForm.classList.add("hidden");
+      }
+
+      function parseHexColor(value) {
+        if (!value || typeof value !== "string") {
+          return null;
+        }
+
+        const normalized = value.trim().replace(/^#/, "");
+        if (/^[0-9a-f]{3}$/i.test(normalized)) {
+          return {
+            r: Number.parseInt(normalized[0] + normalized[0], 16),
+            g: Number.parseInt(normalized[1] + normalized[1], 16),
+            b: Number.parseInt(normalized[2] + normalized[2], 16),
+          };
+        }
+
+        if (/^[0-9a-f]{6}$/i.test(normalized)) {
+          return {
+            r: Number.parseInt(normalized.slice(0, 2), 16),
+            g: Number.parseInt(normalized.slice(2, 4), 16),
+            b: Number.parseInt(normalized.slice(4, 6), 16),
+          };
+        }
+
+        return null;
+      }
+
+      function rgbToHex(color) {
+        return `#${[color.r, color.g, color.b].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+      }
+
+      function rgba(color, alpha) {
+        return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+      }
+
+      function blendColor(base, target, amount) {
+        return {
+          r: Math.round(base.r + ((target.r - base.r) * amount)),
+          g: Math.round(base.g + ((target.g - base.g) * amount)),
+          b: Math.round(base.b + ((target.b - base.b) * amount)),
+        };
+      }
+
+      function luminance(color) {
+        const channels = [color.r, color.g, color.b].map((value) => {
+          const normalized = value / 255;
+          return normalized <= 0.03928
+            ? normalized / 12.92
+            : ((normalized + 0.055) / 1.055) ** 2.4;
+        });
+
+        return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+      }
+
+      function contrastRatio(foreground, background) {
+        const light = Math.max(luminance(foreground), luminance(background));
+        const dark = Math.min(luminance(foreground), luminance(background));
+        return (light + 0.05) / (dark + 0.05);
+      }
+
+      function ensureReadableTextColor(input, surface, minimumContrast = 4.5) {
+        const fallbackLight = { r: 248, g: 250, b: 252 };
+        const fallbackDark = { r: 15, g: 23, b: 42 };
+        const background = parseHexColor(surface) || fallbackDark;
+        const configured = parseHexColor(input) || fallbackLight;
+
+        if (contrastRatio(configured, background) >= minimumContrast) {
+          return configured;
+        }
+
+        const target = luminance(background) < 0.36 ? fallbackLight : fallbackDark;
+        for (let step = 0.18; step <= 1; step += 0.12) {
+          const candidate = blendColor(configured, target, step);
+          if (contrastRatio(candidate, background) >= minimumContrast) {
+            return candidate;
+          }
+        }
+
+        return target;
+      }
+
+      function resetRuntimeSurface() {
+        clearTransientBlocks();
+        messages.innerHTML = "";
+        handoverBtn.classList.add("hidden");
+        handoverBtn.classList.remove("handover--sent");
+        handoverBtn.disabled = false;
+        handoverBtn.textContent = "Hablar con persona";
+        hasUserInteracted = false;
+        botName.parentElement.querySelectorAll(".header__logo").forEach((item) => item.remove());
+      }
+
+      function resolvedLauncherLabel(nextConfig) {
+        if (nextConfig?.theme?.launcherLabel) {
+          return nextConfig.theme.launcherLabel;
+        }
+        if (isMarketingContext) {
+          return isMarketingEn ? "Talkaris AI" : "Hablar con IA";
+        }
+        const isSpanish = isSpanishRuntime(nextConfig);
+        const runtimeLabel = nextConfig?.botName || brandLabel;
+        return runtimeLabel && runtimeLabel !== "la plataforma"
+          ? (isSpanish ? `Hablar con ${runtimeLabel}` : `Talk to ${runtimeLabel}`)
+          : (isSpanish ? "Hablar ahora" : "Talk now");
+      }
+
+      function resolvedLauncherEyebrow(nextConfig) {
+        if (nextConfig?.theme?.launcherEyebrow) {
+          return nextConfig.theme.launcherEyebrow;
+        }
+        const label = nextConfig?.botName || brandLabel || "Talkaris";
+        if (isMarketingContext) {
+          return "AI Copilot";
+        }
+        if (label.length > 18) {
+          return isSpanishRuntime(nextConfig) ? "Asistente" : "Assistant";
+        }
+        return label;
+      }
+
+      function applyLauncherVisual(nextConfig) {
+        const label = resolvedLauncherLabel(nextConfig);
+        const eyebrow = resolvedLauncherEyebrow(nextConfig);
+        const configuredIcon = (nextConfig?.theme?.launcherIcon || "").trim();
+        const markText = configuredIcon || ((nextConfig?.botName || brandLabel || "AI").trim()[0] || "AI").toUpperCase();
+        const shape = nextConfig?.theme?.launcherShape || "pill";
+        const buttonStyle = nextConfig?.theme?.buttonStyle || "solid";
+        const width = shape === "compact"
+          ? Math.max(176, Math.min(300, Math.round(label.length * 8 + 104)))
+          : Math.max(236, Math.min(380, Math.round(label.length * 9.1 + 154)));
+        const height = shape === "compact" ? 76 : 96;
+        const resolvedAccentColor = nextConfig?.theme?.accentColor || "#6366f1";
+        const resolvedSurfaceColor = nextConfig?.theme?.surfaceColor || "#0f172a";
+        const configuredTextColor = nextConfig?.theme?.textColor || "#f8fafc";
+        const resolvedTextColor = ensureReadableTextColor(configuredTextColor, resolvedSurfaceColor, 6.6);
+        const resolvedAccentTextColor = ensureReadableTextColor(configuredTextColor, resolvedAccentColor, 4.5);
+
+        document.documentElement.style.setProperty(
+          "--accent",
+          resolvedAccentColor
+        );
+        document.documentElement.style.setProperty(
+          "--accent-alt",
+          nextConfig?.theme?.presetKey === "midnight"
+            ? "#475569"
+            : nextConfig?.theme?.presetKey === "violet"
+              ? "#7c3aed"
+              : nextConfig?.theme?.presetKey === "aurora"
+                ? "#8b5cf6"
+                : "#4f46e5"
+        );
+        document.documentElement.style.setProperty(
+          "--surface",
+          resolvedSurfaceColor
+        );
+        document.documentElement.style.setProperty(
+          "--text",
+          rgbToHex(resolvedTextColor)
+        );
+        document.documentElement.style.setProperty(
+          "--accent-text",
+          rgbToHex(resolvedAccentTextColor)
+        );
+        document.documentElement.style.setProperty("--muted", rgba(resolvedTextColor, 0.64));
+        document.documentElement.style.setProperty("--border", rgba(resolvedTextColor, 0.1));
+        document.documentElement.style.setProperty("--border-strong", rgba(resolvedTextColor, 0.16));
+
+        launcher.dataset.shape = shape;
+        launcher.dataset.buttonStyle = buttonStyle;
+        widget.dataset.buttonStyle = nextConfig?.theme?.buttonStyle || "solid";
+        launcherLabel.textContent = label;
+        launcherEyebrow.textContent = eyebrow;
+        launcher.style.width = `${width}px`;
+        launcher.style.height = `${height}px`;
+
+        if (nextConfig?.theme?.logoUrl) {
+          launcherMark.replaceChildren();
+          const img = document.createElement("img");
+          img.src = nextConfig.theme.logoUrl;
+          img.alt = eyebrow;
+          launcherMark.appendChild(img);
+        } else {
+          launcherMark.replaceChildren();
+          launcherMark.textContent = markText;
+        }
+
+        notifyLauncherSize(`${width}px`, `${height}px`);
+      }
+
+      function isSpanishRuntime(nextConfig) {
+        const welcome = (nextConfig?.welcomeMessage || "").toLowerCase();
+        const copy = (nextConfig?.theme?.botCopy || "").toLowerCase();
+        return /^es/i.test(navigator.language || "") || /hola|puedo ayudarte|servicios|contacto/.test(`${welcome} ${copy}`);
+      }
+
+      function deriveStarterQuestions(nextConfig) {
+        if (Array.isArray(nextConfig?.starterQuestions) && nextConfig.starterQuestions.length) {
+          return nextConfig.starterQuestions;
+        }
+
+        if (Array.isArray(nextConfig?.assistantProfile?.servicePromptLibrary) && nextConfig.assistantProfile.servicePromptLibrary.length) {
+          return nextConfig.assistantProfile.servicePromptLibrary;
+        }
+
+        const label = nextConfig?.botName || brandLabel || "el asistente";
+        if (isSpanishRuntime(nextConfig)) {
+          return [
+            `¿Qué hace ${label} exactamente?`,
+            `¿Qué servicios o soluciones ofrece ${label}?`,
+            `¿Cómo puede ayudarme ${label} en mi caso?`,
+            `Quiero hablar con el equipo de ${label}`,
+          ];
+        }
+
+        return [
+          `What does ${label} do exactly?`,
+          `What services or solutions does ${label} offer?`,
+          `How can ${label} help in my case?`,
+          `I want to speak with the ${label} team`,
+        ];
+      }
+
+      function applyRuntimeConfig(nextConfig) {
+        config = nextConfig;
+        resetRuntimeSurface();
+        applyLauncherVisual(nextConfig);
+
+        const resolvedBotName = isMarketingContext
+          ? brandLabel
+          : (nextConfig.botName || brandLabel || "Asistente");
+        const resolvedBotCopy = isMarketingContext
+          ? defaultBotCopy
+          : (nextConfig.theme?.botCopy || defaultBotCopy);
+        const resolvedWelcomeMessage = isMarketingContext
+          ? defaultWelcomeMessage
+          : (nextConfig.welcomeMessage || defaultWelcomeMessage);
+        const resolvedStarterQuestions = isMarketingContext
+          ? marketingStarterQuestions
+          : deriveStarterQuestions(nextConfig);
+        const runtimePolicy = nextConfig.runtimePolicy || {};
+        const maxSuggestionSlots = window.innerWidth <= 640
+          ? Math.min(2, Number(runtimePolicy.maxMobileSuggestions) || 2)
+          : Math.min(3, Number(runtimePolicy.maxDesktopSuggestions) || 3);
+        const visibleStarterQuestions = resolvedStarterQuestions.slice(0, maxSuggestionSlots);
+        const resolvedComposerPlaceholder = nextConfig.theme?.composerPlaceholder
+          || (isMarketingEn
+            ? "Ask about the product, integrations or support."
+            : "Pregunta sobre el producto, integraciones o soporte.");
+        const resolvedSendButtonLabel = nextConfig.theme?.sendButtonLabel
+          || (isMarketingEn ? "Send" : "Enviar");
+
+        botName.textContent = resolvedBotName;
+        botCopy.textContent = resolvedBotCopy;
+        composer.placeholder = resolvedComposerPlaceholder;
+        sendButton.textContent = resolvedSendButtonLabel;
+        addBubble("bot", resolvedWelcomeMessage);
+
+        if (!runtimePolicy.hideStartersAfterFirstUserMessage || !hasUserInteracted) {
+          renderSuggestionTray(
+            visibleStarterQuestions.map((question) => ({
+              label: question,
+              prompt: question,
+            }))
+          );
+        }
+
+        setLeadCta(
+          nextConfig.cta?.primaryLabel || "Request demo",
+          nextConfig.cta?.primaryUrl || fallbackContactUrl,
+          true,
+          nextConfig.cta?.secondaryLabel,
+          nextConfig.cta?.secondaryUrl,
+          isMarketingEn
+            ? "Use the next step that fits your buying motion."
+            : "Usa el siguiente paso que mejor encaje con tu proceso."
+        );
+        leadCard.classList.add("hidden");
+
+        primaryCta.onclick = () => {
+          logEvent("cta_clicked", { url: primaryCta.href, slot: "primary" });
+        };
+        secondaryCta.onclick = () => {
+          if (!secondaryCta.classList.contains("hidden")) {
+            logEvent("cta_clicked", { url: secondaryCta.href, slot: "secondary" });
+          }
+        };
+
+        if (nextConfig.enableHandover) {
+          handoverBtn.classList.remove("hidden");
+          handoverBtn.onclick = requestHandover;
+        } else {
+          handoverBtn.classList.add("hidden");
+          handoverBtn.onclick = null;
+        }
+
+        if (nextConfig.theme?.logoUrl) {
+          const img = document.createElement("img");
+          img.src = nextConfig.theme.logoUrl;
+          img.alt = "Logo";
+          img.className = "header__logo";
+          botName.parentElement.insertBefore(img, botName);
+        }
+
+        if (nextConfig.theme?.removeBranding) {
+          fallbackContactUrl = nextConfig.cta?.primaryUrl || "#";
+        }
+
+        if (isPreviewWidget) {
+          expanded = true;
+          launcher.classList.add("hidden");
+          widget.classList.remove("hidden");
+        }
+        if (isPreviewLauncher) {
+          expanded = false;
+          launcher.classList.remove("hidden");
+          widget.classList.add("hidden");
+        }
       }
 
       function enableDegradedMode(message) {
@@ -576,7 +1362,33 @@
           return;
         }
 
-        setLeadCta(answer.cta.label, answer.cta.url, true);
+        setLeadCta(
+          answer.cta.label,
+          answer.cta.url,
+          true,
+          config?.cta?.secondaryLabel,
+          config?.cta?.secondaryUrl,
+          "¿Quieres convertir esta conversación en una reunión, una demo o un siguiente paso comercial claro?"
+        );
+      }
+
+      function renderSuggestions(answer) {
+        const block = answer?.suggestions;
+        if (!block?.items?.length) {
+          starters.innerHTML = "";
+          return;
+        }
+
+        const maxItems = window.innerWidth <= 640
+          ? Math.min(2, Number(config?.runtimePolicy?.maxMobileSuggestions) || 2)
+          : Math.min(3, Number(config?.runtimePolicy?.maxDesktopSuggestions) || 3);
+        renderSuggestionTray(
+          block.items.slice(0, maxItems).map((item) => ({
+            label: item.label || item.prompt,
+            prompt: item.prompt || item.label,
+          })),
+          { contextual: true }
+        );
       }
 
       async function sendMessage(message) {
@@ -585,7 +1397,9 @@
           return;
         }
 
+        hasUserInteracted = true;
         lastUserMessage = trimmed;
+        clearTransientBlocks();
         addBubble("user", trimmed);
         composer.value = "";
         setStatus("Buscando en fuentes autorizadas...");
@@ -604,6 +1418,7 @@
 
           addBubble("bot", answer?.message || "No he podido generar una respuesta valida.");
           renderCitations(answer?.citations || []);
+          renderSuggestions(answer || {});
           maybeShowLead(answer || {});
           setStatus(
             answer?.usedFallback
@@ -653,80 +1468,49 @@
       }
 
       async function init() {
-        if (config || degradedMode) {
+        if (degradedMode || launcher.dataset.ready === "true") {
           return;
         }
 
         ensureConfigured();
-        const nextConfig = await fetchJson(
-          `${apiBase}/v1/widget/config/${encodeURIComponent(siteKey)}`
-        );
-
-        config = nextConfig;
-        document.documentElement.style.setProperty(
-          "--accent",
-          config.theme?.accentColor || "#00c2a8"
-        );
-        document.documentElement.style.setProperty(
-          "--surface",
-          config.theme?.surfaceColor || "#081220"
-        );
-        const resolvedBotName = isMarketingContext
-          ? brandLabel
-          : (config.botName || brandLabel || "Asistente");
-        const resolvedBotCopy = isMarketingContext
-          ? defaultBotCopy
-          : (config.welcomeMessage || defaultBotCopy);
-        const resolvedWelcomeMessage = isMarketingContext
-          ? defaultWelcomeMessage
-          : (config.welcomeMessage || defaultWelcomeMessage);
-
-        botName.textContent = resolvedBotName;
-        botCopy.textContent = resolvedBotCopy;
-        addBubble("bot", resolvedWelcomeMessage);
-        starters.innerHTML = "";
-        starterQuestions.forEach((question) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "starter";
-          button.textContent = question;
-          button.addEventListener("click", () => sendMessage(question));
-          starters.appendChild(button);
-        });
-        primaryCta.textContent = config.cta?.primaryLabel || "Request demo";
-        primaryCta.href = config.cta?.primaryUrl || fallbackContactUrl;
-        leadCard.classList.add("hidden");
-        leadForm.classList.add("hidden");
-        primaryCta.addEventListener("click", () => {
-          logEvent("cta_clicked", { url: primaryCta.href });
-        });
-        if (config.enableHandover) {
-          handoverBtn.classList.remove("hidden");
-          handoverBtn.addEventListener("click", requestHandover);
-        }
-        // V2-H: Whitelabeling
-        if (config.theme?.logoUrl) {
-          const img = document.createElement("img");
-          img.src = config.theme.logoUrl;
-          img.alt = "Logo";
-          img.style.cssText = "height:26px;width:auto;object-fit:contain;border-radius:4px;";
-          botName.parentElement.insertBefore(img, botName);
-        }
-        if (config.theme?.removeBranding) {
-          fallbackContactUrl = config.cta?.primaryUrl || "#";
-        }
+        const nextConfig = await fetchJson(`${apiBase}/v1/widget/config/${encodeURIComponent(siteKey)}`);
+        applyRuntimeConfig(nextConfig);
 
         // Proactive bubble
         const proactiveTip = document.getElementById("proactive-tip");
-        if (config.theme?.proactiveMessage && proactiveTip && !expanded) {
-          const delay = (config.theme.proactiveDelaySeconds ?? 8) * 1000;
+        if (nextConfig.theme?.proactiveMessage && proactiveTip && !expanded) {
+          const delay = (nextConfig.theme.proactiveDelaySeconds ?? 8) * 1000;
           setTimeout(() => {
             if (!expanded) {
-              proactiveTip.textContent = config.theme.proactiveMessage;
+              proactiveTip.textContent = nextConfig.theme.proactiveMessage;
               proactiveTip.classList.remove("hidden");
               setTimeout(() => proactiveTip.classList.add("hidden"), 8000);
             }
           }, delay);
+        }
+        launcher.dataset.ready = "true";
+      }
+
+      async function primeLauncher() {
+        if (isStudioPreview) {
+          return;
+        }
+        if (isMarketingContext) {
+          applyLauncherVisual({
+            botName: brandLabel || "Talkaris",
+            theme: {
+              launcherLabel: isMarketingEn ? "Talkaris AI" : "Hablar con IA",
+            },
+          });
+          return;
+        }
+
+        try {
+          const nextConfig = await fetchJson(`${apiBase}/v1/widget/config/${encodeURIComponent(siteKey)}`);
+          config = nextConfig;
+          applyLauncherVisual(nextConfig);
+        } catch {
+          applyLauncherVisual({ botName: brandLabel || "Assistant", theme: {} });
         }
       }
 
@@ -735,7 +1519,9 @@
         handoverBtn.disabled = true;
         handoverBtn.textContent = "Enviando\u2026";
         try {
-          await postJson("/v1/widget/handover", { siteKey, conversationId, reason: "user_requested" });
+          await postJson(`/v1/widget/conversations/${encodeURIComponent(conversationId)}/handover`, {
+            reason: "user_requested"
+          });
           handoverBtn.textContent = "Solicitud enviada \u2713";
           handoverBtn.classList.add("handover--sent");
           addBubble("bot", "Hemos avisado al equipo. Se pondr\u00e1n en contacto contigo pronto.");
@@ -746,6 +1532,9 @@
       }
 
       launcher.addEventListener("click", async () => {
+        if (isStudioPreview) {
+          return;
+        }
         setExpanded(true);
 
         try {
@@ -777,13 +1566,42 @@
         document.getElementById("lead-need").value = lastUserMessage;
       });
       leadForm.addEventListener("submit", submitLead);
-      launcher.textContent = isMarketingContext ? "AI" : "Chat";
+      bindRuntimeScroll();
+      window.addEventListener("message", (event) => {
+        if (!isStudioPreview || !event.data) {
+          return;
+        }
+
+        if (
+          event.origin !== window.location.origin
+          && parentOrigin !== "*"
+          && event.origin !== parentOrigin
+        ) {
+          return;
+        }
+
+        if (event.data.type === "talkaris-chat:preview-config") {
+          applyRuntimeConfig(event.data.config || {});
+        }
+      });
+      applyLauncherVisual({ botName: brandLabel || "Assistant", theme: {} });
       botName.textContent = brandLabel;
       botCopy.textContent = defaultBotCopy;
+      composer.placeholder = isMarketingEn
+        ? "Ask about the product, integrations or support."
+        : "Pregunta sobre el producto, integraciones o soporte.";
+      sendButton.textContent = isMarketingEn ? "Send" : "Enviar";
       primaryCta.textContent = "Request demo";
       primaryCta.href = fallbackContactUrl;
+      secondaryCta.classList.add("hidden");
       leadCard.classList.add("hidden");
       setComposerEnabled(true);
+      if (isPreviewWidget) {
+        expanded = true;
+        launcher.classList.add("hidden");
+        widget.classList.remove("hidden");
+      }
+      void primeLauncher();
     </script>
   </body>
 </html>

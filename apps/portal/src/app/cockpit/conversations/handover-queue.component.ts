@@ -9,18 +9,6 @@ import { HandoverQueueItem } from "../../core/models";
   standalone: true,
   imports: [RouterModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <strong>Live</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="setStatus('pending')" [class.is-active]="filterStatus === 'pending'">Pending</button>
-        <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="setStatus('assigned')" [class.is-active]="filterStatus === 'assigned'">Assigned</button>
-        <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="setStatus('closed')" [class.is-active]="filterStatus === 'closed'">Closed</button>
-        <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="load()">Refresh</button>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
@@ -28,6 +16,12 @@ import { HandoverQueueItem } from "../../core/models";
           <p class="ck-page-header__sub">
             {{ items.length }} {{ filterStatus }} request{{ items.length !== 1 ? 's' : '' }}
           </p>
+        </div>
+        <div class="ck-page-header__actions">
+          <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="setStatus('pending')" [class.is-active]="filterStatus === 'pending'">Pending</button>
+          <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="setStatus('assigned')" [class.is-active]="filterStatus === 'assigned'">Assigned</button>
+          <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="setStatus('closed')" [class.is-active]="filterStatus === 'closed'">Closed</button>
+          <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="load()">Refresh</button>
         </div>
       </div>
 
@@ -48,16 +42,15 @@ import { HandoverQueueItem } from "../../core/models";
               <tr>
                 <td>
                   <a [routerLink]="['/app/conversations', item.sessionId]"
-                     class="ck-table__cell--mono"
-                     style="color: var(--ck-accent); text-decoration: none;">
+                     class="ck-table__cell--mono ck-auto-134">
                     {{ item.sessionId.slice(0, 8) }}…
                   </a>
                 </td>
-                <td style="font-size: 0.84rem;">
-                  <span class="ck-badge ck-badge--accent" style="font-size: 0.72rem;">{{ item.projectKey }}</span>
+                <td class="ck-auto-062">
+                  <span class="ck-badge ck-badge--accent ck-auto-135">{{ item.projectKey }}</span>
                   {{ item.botName }}
                 </td>
-                <td style="font-size: 0.82rem; color: var(--ck-text-soft); max-width: 260px;">
+                <td class="ck-auto-136">
                   {{ item.reason ?? '—' }}
                 </td>
                 <td>
@@ -66,9 +59,9 @@ import { HandoverQueueItem } from "../../core/models";
                     {{ item.status }}
                   </span>
                 </td>
-                <td style="font-size: 0.78rem; color: var(--ck-text-muted);">{{ fmtDate(item.createdAt) }}</td>
+                <td class="ck-auto-077">{{ fmtDate(item.createdAt) }}</td>
                 <td>
-                  <div style="display: flex; gap: 6px;">
+                  <div class="ck-auto-102">
                     @if (item.status === 'pending') {
                       <button class="ck-btn ck-btn--primary ck-btn--sm" (click)="claim(item)" [disabled]="busy[item.id]">
                         Claim
@@ -85,7 +78,7 @@ import { HandoverQueueItem } from "../../core/models";
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" style="text-align: center; color: var(--ck-text-muted);">
+                <td colspan="6" class="ck-auto-137">
                   No {{ filterStatus }} handover requests
                 </td>
               </tr>

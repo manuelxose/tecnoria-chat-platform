@@ -27,18 +27,18 @@ import { NotificationPrefs } from "../../core/models";
       </div>
 
       @if (prefs) {
-        <div style="max-width: 560px; display: grid; gap: 16px;">
+        <div class="ck-auto-185">
 
           <!-- Email recipients -->
           <div class="ck-card">
             <div class="ck-card__header">
               <p class="ck-card__title">Email Recipients</p>
             </div>
-            <p style="font-size: 0.82rem; color: var(--ck-text-soft); margin-bottom: 10px;">Comma-separated email addresses</p>
+            <p class="ck-auto-186">Comma-separated email addresses</p>
             <textarea
               class="ck-input"
               rows="3"
-              style="resize: vertical;"
+              class="ck-auto-187"
               [ngModel]="prefs.emailRecipients.join(', ')"
               (ngModelChange)="setRecipients($event)"
             ></textarea>
@@ -49,34 +49,34 @@ import { NotificationPrefs } from "../../core/models";
             <div class="ck-card__header">
               <p class="ck-card__title">Alerts</p>
             </div>
-            <div style="display: grid; gap: 14px;">
-              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+            <div class="ck-auto-188">
+              <label class="ck-auto-189">
                 <div>
-                  <p style="font-size: 0.84rem; font-weight: 500; color: var(--ck-text);">Lead captured</p>
-                  <p style="font-size: 0.78rem; color: var(--ck-text-muted);">When a contact submits their info via the chatbot</p>
+                  <p class="ck-auto-190">Lead captured</p>
+                  <p class="ck-auto-077">When a contact submits their info via the chatbot</p>
                 </div>
                 <input type="checkbox" [(ngModel)]="prefs.leadCreated" />
               </label>
-              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+              <label class="ck-auto-189">
                 <div>
-                  <p style="font-size: 0.84rem; font-weight: 500; color: var(--ck-text);">Ingestion failed</p>
-                  <p style="font-size: 0.78rem; color: var(--ck-text-muted);">When a knowledge source crawl job fails</p>
+                  <p class="ck-auto-190">Ingestion failed</p>
+                  <p class="ck-auto-077">When a knowledge source crawl job fails</p>
                 </div>
                 <input type="checkbox" [(ngModel)]="prefs.ingestionFailed" />
               </label>
-              <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+              <label class="ck-auto-189">
                 <div>
-                  <p style="font-size: 0.84rem; font-weight: 500; color: var(--ck-text);">Low confidence alert</p>
-                  <p style="font-size: 0.78rem; color: var(--ck-text-muted);">When responses fall below your confidence threshold</p>
+                  <p class="ck-auto-190">Low confidence alert</p>
+                  <p class="ck-auto-077">When responses fall below your confidence threshold</p>
                 </div>
                 <input type="checkbox" [(ngModel)]="prefs.lowConfidenceAlert" />
               </label>
               @if (prefs.lowConfidenceAlert) {
-                <div style="padding-left: 16px; border-left: 2px solid var(--ck-border);">
-                  <label style="font-size: 0.82rem; color: var(--ck-text-soft); display: block; margin-bottom: 4px;">
+                <div class="ck-auto-191">
+                  <label class="ck-auto-192">
                     Threshold (0–1): {{ prefs.lowConfidenceThreshold }}
                   </label>
-                  <input type="range" min="0" max="1" step="0.05" [(ngModel)]="prefs.lowConfidenceThreshold" style="width: 100%;" />
+                  <input type="range" min="0" max="1" step="0.05" [(ngModel)]="prefs.lowConfidenceThreshold" class="ck-auto-034" />
                 </div>
               }
             </div>
@@ -94,19 +94,19 @@ import { NotificationPrefs } from "../../core/models";
             </select>
           </div>
 
-          <div style="display: flex; gap: 10px;">
+          <div class="ck-auto-169">
             <button class="ck-btn ck-btn--primary" (click)="save()" [disabled]="saving">
               {{ saving ? 'Saving…' : 'Save Preferences' }}
             </button>
             @if (savedMsg) {
-              <span style="font-size: 0.84rem; color: var(--ck-accent-strong); align-self: center;">{{ savedMsg }}</span>
+              <span class="ck-auto-193">{{ savedMsg }}</span>
             }
           </div>
         </div>
       } @else {
         <div class="ck-card">
           @for (i of [1, 2, 3]; track i) {
-            <div class="ck-skeleton" style="height: 40px; margin-bottom: 10px;"></div>
+            <div class="ck-skeleton ck-auto-099"></div>
           }
         </div>
       }

@@ -28,49 +28,49 @@ import { Project } from "../../core/models";
       @if (loading) {
         <div class="ck-stats">
           @for (i of [1,2,3]; track i) {
-            <div class="ck-stat"><div class="ck-skeleton" style="height: 60px;"></div></div>
+            <div class="ck-stat"><div class="ck-skeleton ck-auto-011"></div></div>
           }
         </div>
       } @else {
-        <div class="ck-stats" style="margin-bottom: 24px;">
+        <div class="ck-stats ck-auto-053">
           <div class="ck-stat">
             <div class="ck-stat__label">Total Bots</div>
             <div class="ck-stat__value">{{ bots.length }}</div>
           </div>
           <div class="ck-stat">
             <div class="ck-stat__label">Active</div>
-            <div class="ck-stat__value" style="color: var(--ck-success);">{{ activeCount }}</div>
+            <div class="ck-stat__value ck-auto-071">{{ activeCount }}</div>
           </div>
           <div class="ck-stat">
             <div class="ck-stat__label">Draft</div>
-            <div class="ck-stat__value" style="color: var(--ck-warning);">{{ draftCount }}</div>
+            <div class="ck-stat__value ck-auto-072">{{ draftCount }}</div>
           </div>
           <div class="ck-stat">
             <div class="ck-stat__label">Disabled</div>
-            <div class="ck-stat__value" style="color: var(--ck-text-muted);">{{ disabledCount }}</div>
+            <div class="ck-stat__value ck-auto-073">{{ disabledCount }}</div>
           </div>
         </div>
 
         @if (bots.length > 0) {
-          <div style="display: grid; gap: 12px;">
+          <div class="ck-auto-059">
             @for (bot of bots; track bot.id) {
-              <div class="ck-card ck-card--compact" style="display: flex; align-items: center; gap: 16px;">
-                <div style="flex: 1;">
-                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                    <strong style="color: var(--ck-text);">{{ bot.botName }}</strong>
+              <div class="ck-card ck-card--compact ck-auto-074">
+                <div class="ck-auto-023">
+                  <div class="ck-auto-075">
+                    <strong class="ck-auto-076">{{ bot.botName }}</strong>
                     <span class="ck-badge" [class]="statusBadge(bot.status)">
                       <span class="ck-dot"></span> {{ bot.status ?? 'active' }}
                     </span>
                   </div>
-                  <div style="font-size: 0.78rem; color: var(--ck-text-muted);">
-                    <span style="font-family: ui-monospace;">{{ bot.projectKey }}</span>
+                  <div class="ck-auto-077">
+                    <span class="ck-auto-078">{{ bot.projectKey }}</span>
                     &nbsp;·&nbsp;
                     {{ bot.allowedDomains.length }} domain(s)
                     &nbsp;·&nbsp;
                     {{ bot.language }}
                   </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
+                <div class="ck-auto-079">
                   <a class="ck-btn ck-btn--ghost ck-btn--sm" [routerLink]="['/app/bots', bot.projectKey]">
                     Configure
                   </a>

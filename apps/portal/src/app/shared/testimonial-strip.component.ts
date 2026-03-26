@@ -27,55 +27,7 @@ import { PublicLocale } from "../content/public-site";
         </div>
       </div>
     </section>
-  `,
-  styles: [`
-    .testimonial-strip {
-      background: var(--surface-dark, #081424);
-      color: #fff;
-      padding: 5rem 0;
-    }
-    .testimonial-strip .section-heading h2 { color: #fff; }
-    .testimonial-strip .eyebrow { color: var(--gold, #c29a52); }
-    .testimonial-strip__grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      margin-top: 2.5rem;
-    }
-    .testimonial-strip__card {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 2rem;
-    }
-    .testimonial-strip__quote {
-      font-size: 1rem;
-      line-height: 1.7;
-      font-style: italic;
-      margin: 0;
-      color: rgba(255,255,255,0.85);
-    }
-    .testimonial-strip__author {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      font-size: 0.875rem;
-    }
-    .testimonial-strip__author strong {
-      font-weight: 700;
-      color: #fff;
-    }
-    .testimonial-strip__author span {
-      color: rgba(255,255,255,0.65);
-    }
-    .testimonial-strip__company {
-      color: var(--gold, #c29a52) !important;
-      font-size: 0.8rem;
-    }
-  `],
-})
+  `})
 export class TestimonialStripComponent {
   @Input() locale: PublicLocale = "es";
 

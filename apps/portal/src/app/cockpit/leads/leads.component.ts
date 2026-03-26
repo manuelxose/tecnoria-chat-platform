@@ -10,25 +10,19 @@ import { LeadItem } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <strong>Leads</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <span style="font-size: 0.84rem; color: var(--ck-text-muted);">{{ leads.length }} total</span>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Leads</h1>
           <p class="ck-page-header__sub">Contacts captured through bot conversations</p>
         </div>
+        <div class="ck-page-header__actions">
+          <span class="ck-badge ck-badge--default">{{ leads.length }} total</span>
+        </div>
       </div>
 
       <div class="ck-toolbar">
-        <select class="ck-select" style="width: auto; min-width: 140px;" [(ngModel)]="filterStatus">
+        <select class="ck-select ck-auto-157" [(ngModel)]="filterStatus">
           <option value="">All status</option>
           <option value="delivered">Delivered</option>
           <option value="failed">Failed</option>
@@ -39,7 +33,7 @@ import { LeadItem } from "../../core/models";
       @if (loading) {
         <div class="ck-card">
           @for (i of [1,2,3,4]; track i) {
-            <div class="ck-skeleton" style="height: 52px; margin-bottom: 8px;"></div>
+            <div class="ck-skeleton ck-auto-036"></div>
           }
         </div>
       } @else if (filtered.length > 0) {
@@ -57,7 +51,7 @@ import { LeadItem } from "../../core/models";
             <tbody>
               @for (lead of filtered; track lead.id) {
                 <tr>
-                  <td class="ck-table__cell--mono" style="font-size: 0.75rem;">{{ lead.id.slice(0, 8) }}…</td>
+                  <td class="ck-table__cell--mono ck-auto-147">{{ lead.id.slice(0, 8) }}…</td>
                   <td><span class="ck-badge ck-badge--accent">{{ lead.projectKey ?? lead.projectId }}</span></td>
                   <td>
                     <span class="ck-badge" [class]="statusBadge(lead.deliveryStatus)">
@@ -67,7 +61,7 @@ import { LeadItem } from "../../core/models";
                   </td>
                   <td>
                     @if (lead.payload) {
-                      <div style="font-size: 0.78rem; color: var(--ck-text-soft);">
+                      <div class="ck-auto-174">
                         @for (key of payloadKeys(lead.payload); track key) {
                           <span>{{ key }}: {{ lead.payload[key] }}</span>
                           &nbsp;&nbsp;
@@ -75,7 +69,7 @@ import { LeadItem } from "../../core/models";
                       </div>
                     }
                   </td>
-                  <td style="color: var(--ck-text-muted); font-size: 0.78rem;">
+                  <td class="ck-auto-010">
                     {{ lead.createdAt | date: 'MMM d, HH:mm' }}
                   </td>
                 </tr>

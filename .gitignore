@@ -12,3 +12,14 @@ coverage/
 *.env
 
 apps/portal/releases/
+
+# AI tooling
+.agents/
+.claude-flow/
+.claude/
+.swarm/
+.codex/
+.gemini/
+tmp-storage/
+current
+releases/

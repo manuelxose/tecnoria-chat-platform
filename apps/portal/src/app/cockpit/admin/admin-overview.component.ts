@@ -8,20 +8,14 @@ import { AdminOverview } from "../../core/models";
   standalone: true,
   imports: [RouterModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <strong>Platform Overview</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <span class="ck-badge ck-badge--danger">Superadmin</span>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Platform Overview</h1>
           <p class="ck-page-header__sub">Global state of the Talkaris platform</p>
+        </div>
+        <div class="ck-page-header__actions">
+          <span class="ck-badge ck-badge--danger">Superadmin</span>
         </div>
       </div>
 
@@ -55,7 +49,7 @@ import { AdminOverview } from "../../core/models";
           </div>
           <div class="ck-stat">
             <div class="ck-stat__label">Pending Requests</div>
-            <div class="ck-stat__value" [style]="overview.counts.pending_requests > 0 ? 'color: var(--ck-warning)' : ''">
+            <div class="ck-stat__value" [class.ck-score--warning]="overview.counts.pending_requests > 0">
               {{ overview.counts.pending_requests }}
             </div>
             <div class="ck-stat__delta">Awaiting review</div>
@@ -89,12 +83,12 @@ import { AdminOverview } from "../../core/models";
                       <td class="ck-table__cell--strong">{{ req.company }}</td>
                       <td>
                         <div>{{ req.name }}</div>
-                        <div style="font-size: 0.75rem; color: var(--ck-text-muted);">{{ req.email }}</div>
+                        <div class="ck-auto-009">{{ req.email }}</div>
                       </td>
                       <td>
                         <span class="ck-badge" [class]="requestBadge(req.status)">{{ req.status }}</span>
                       </td>
-                      <td style="color: var(--ck-text-muted); font-size: 0.78rem;">
+                      <td class="ck-auto-010">
                         {{ req.createdAt | date: 'MMM d' }}
                       </td>
                       <td>
@@ -110,44 +104,44 @@ import { AdminOverview } from "../../core/models";
       } @else {
         <div class="ck-stats">
           @for (i of [1,2,3,4,5,6]; track i) {
-            <div class="ck-stat"><div class="ck-skeleton" style="height: 60px;"></div></div>
+            <div class="ck-stat"><div class="ck-skeleton ck-auto-011"></div></div>
           }
         </div>
       }
 
       <!-- Quick admin links -->
-      <div class="ck-grid-three" style="margin-top: 20px;">
-        <a class="ck-card" routerLink="/admin/requests" style="text-decoration: none; cursor: pointer; transition: transform 0.12s;" [style.transform]="'none'">
+      <div class="ck-grid-three ck-auto-012">
+        <a class="ck-card ck-auto-013" routerLink="/admin/requests">
           <div class="ck-card__header">
             <div>
               <p class="ck-card__title">Access Requests</p>
               <p class="ck-card__sub">Review and approve new tenants</p>
             </div>
-            <span style="font-size: 1.2rem;">◎</span>
+            <span class="ck-auto-014">◎</span>
           </div>
           @if (overview && overview.counts.pending_requests > 0) {
             <span class="ck-badge ck-badge--warning">{{ overview.counts.pending_requests }} pending</span>
           }
         </a>
 
-        <a class="ck-card" routerLink="/admin/tenants" style="text-decoration: none; cursor: pointer;">
+        <a class="ck-card ck-auto-015" routerLink="/admin/tenants" >
           <div class="ck-card__header">
             <div>
               <p class="ck-card__title">Tenants</p>
               <p class="ck-card__sub">Manage organizations</p>
             </div>
-            <span style="font-size: 1.2rem;">◈</span>
+            <span class="ck-auto-014">◈</span>
           </div>
           <span class="ck-badge ck-badge--default">{{ overview?.counts?.tenants ?? 0 }} total</span>
         </a>
 
-        <a class="ck-card" routerLink="/admin/users" style="text-decoration: none; cursor: pointer;">
+        <a class="ck-card ck-auto-015" routerLink="/admin/users" >
           <div class="ck-card__header">
             <div>
               <p class="ck-card__title">Users</p>
               <p class="ck-card__sub">Manage platform accounts</p>
             </div>
-            <span style="font-size: 1.2rem;">◉</span>
+            <span class="ck-auto-014">◉</span>
           </div>
           <span class="ck-badge ck-badge--default">{{ overview?.counts?.users ?? 0 }} total</span>
         </a>

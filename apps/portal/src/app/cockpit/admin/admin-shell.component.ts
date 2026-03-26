@@ -7,12 +7,12 @@ import { SessionStore } from "../../core/session.store";
   standalone: true,
   imports: [RouterOutlet, RouterModule],
   template: `
-    <div class="ck-shell">
+    <div class="ck-surface--cockpit ck-shell">
       <!-- SIDEBAR -->
       <aside class="ck-sidebar">
         <!-- Brand -->
         <a class="ck-brand" routerLink="/admin/overview">
-          <span class="ck-brand__mark" style="background: linear-gradient(135deg, #ef4444, #f97316);">⬡</span>
+          <span class="ck-brand__mark ck-auto-030">⬡</span>
           <span class="ck-brand__name">Superadmin</span>
         </a>
 
@@ -58,7 +58,7 @@ import { SessionStore } from "../../core/session.store";
         <!-- User footer -->
         <div class="ck-sidebar-footer">
           <div class="ck-user-pill">
-            <span class="ck-user-pill__avatar" style="background: linear-gradient(135deg, #ef4444, #f97316);">
+            <span class="ck-user-pill__avatar ck-auto-030">
               {{ userInitial }}
             </span>
             <div class="ck-user-pill__info">
@@ -72,7 +72,26 @@ import { SessionStore } from "../../core/session.store";
 
       <!-- MAIN -->
       <main class="ck-main">
-        <router-outlet />
+        <header class="ck-appbar ck-appbar--admin">
+          <div class="ck-appbar__meta">
+            <p class="ck-appbar__eyebrow">{{ shellModeLabel }}</p>
+            <div class="ck-appbar__breadcrumb">
+              <span>{{ shellSection }}</span>
+              <span>›</span>
+              <strong>{{ shellTitle }}</strong>
+            </div>
+          </div>
+          <div class="ck-appbar__actions">
+            <span class="ck-badge ck-badge--danger">Superadmin</span>
+            <span class="ck-badge ck-badge--default">Platform Control</span>
+          </div>
+        </header>
+
+        <section class="ck-workbench">
+          <div class="ck-route-host">
+            <router-outlet />
+          </div>
+        </section>
       </main>
     </div>
   `,
@@ -103,5 +122,26 @@ export class AdminShellComponent implements OnInit {
   async logout(): Promise<void> {
     await this.session.logout();
     window.location.href = "/login";
+  }
+
+  get shellModeLabel(): string {
+    return "Platform Governance";
+  }
+
+  get shellSection(): string {
+    return this.routeData("section", "Platform");
+  }
+
+  get shellTitle(): string {
+    return this.routeData("title", "Overview");
+  }
+
+  private routeData(key: string, fallback: string): string {
+    let snapshot = this.router.routerState.snapshot.root;
+    while (snapshot.firstChild) {
+      snapshot = snapshot.firstChild;
+    }
+    const value = snapshot.data[key];
+    return typeof value === "string" && value.trim() ? value : fallback;
   }
 }

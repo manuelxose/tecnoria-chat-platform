@@ -101,7 +101,7 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
   portalBaseUrl: "https://talkaris.com",
   apiBaseUrl: "https://talkaris.com/api",
   widgetBaseUrl: "https://talkaris.com/widget/",
-  developedBy: "Tecnoria",
+  developedBy: "Talkaris",
   demoProjectKey: "talkaris",
   demoSiteKey: "talkaris-public-site-key",
   defaultLocale: "es",
@@ -1400,7 +1400,7 @@ const FEATURES_EN: PublicPageDefinition = {
       cards: [
         {
           title: "Async snippet-based load",
-          body: "Light integration with API-resolved configuration and compatibility with legacy aliases.",
+          body: "Light integration with API-resolved configuration and one canonical website snippet.",
           bullets: ["Site key per project", "Allowed domains", "No coupling between public portal and product"],
         },
         {

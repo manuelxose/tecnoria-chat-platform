@@ -12,7 +12,7 @@ import { buildNoIndexSeo } from "../services/seo-utils";
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="login-shell">
+    <div class="ck-surface--cockpit login-shell">
       <div class="login-panel">
 
         <div class="login-brand">
@@ -26,12 +26,14 @@ import { buildNoIndexSeo } from "../services/seo-utils";
             <p>Administra tenants, proyectos e integraciones desde el portal de Talkaris.</p>
           </div>
 
-          <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+          <div class="ck-alert ck-alert--danger" *ngIf="errorMessage">{{ errorMessage }}</div>
 
-          <form class="stack-form" (ngSubmit)="submit()">
-            <label>
-              <span>Email</span>
+          <form class="ck-form-stack auth-form" (ngSubmit)="submit()">
+            <div class="ck-field">
+              <label class="ck-label" for="login-email">Email</label>
               <input
+                id="login-email"
+                class="ck-input"
                 [(ngModel)]="email"
                 name="email"
                 type="email"
@@ -39,11 +41,13 @@ import { buildNoIndexSeo } from "../services/seo-utils";
                 autocomplete="email"
                 placeholder="tu@empresa.com"
               />
-            </label>
+            </div>
 
-            <label>
-              <span>Contraseña</span>
+            <div class="ck-field">
+              <label class="ck-label" for="login-password">Contraseña</label>
               <input
+                id="login-password"
+                class="ck-input"
                 [(ngModel)]="password"
                 name="password"
                 type="password"
@@ -51,9 +55,9 @@ import { buildNoIndexSeo } from "../services/seo-utils";
                 autocomplete="current-password"
                 placeholder="••••••••"
               />
-            </label>
+            </div>
 
-            <button class="button button-primary button-primary--block" type="submit" [disabled]="loading">
+            <button class="ck-btn ck-btn--primary ck-btn--fill" type="submit" [disabled]="loading">
               {{ loading ? "Validando..." : "Entrar al portal" }}
             </button>
           </form>
@@ -98,11 +102,11 @@ import { buildNoIndexSeo } from "../services/seo-utils";
               </div>
               <div class="login-mockup__divider"></div>
               <div class="login-mockup__row">
-                <span class="login-mockup__dot login-mockup__dot--green"></span>
+                <span class="login-mockup__dot login-mockup__dot--indigo"></span>
                 <span>Widget activo en 3 dominios</span>
               </div>
               <div class="login-mockup__row">
-                <span class="login-mockup__dot login-mockup__dot--green"></span>
+                <span class="login-mockup__dot login-mockup__dot--violet"></span>
                 <span>Ingest completado · hace 2 min</span>
               </div>
               <div class="login-mockup__row">
@@ -114,197 +118,7 @@ import { buildNoIndexSeo } from "../services/seo-utils";
         </div>
       </aside>
     </div>
-  `,
-  styles: [`
-    :host {
-      display: block;
-      width: 100%;
-      overflow-x: hidden;
-    }
-    .login-shell {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      min-height: 100vh;
-      width: 100%;
-    }
-    .login-panel {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 4rem 3rem 4rem 10%;
-      gap: 2rem;
-      background: var(--paper);
-    }
-    .login-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      max-width: 400px;
-      width: 100%;
-    }
-    .login-brand__logo {
-      font-size: 1.1rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--brand);
-    }
-    .login-brand__tag {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, var(--ink) 40%, transparent);
-      background: color-mix(in srgb, var(--ink) 7%, transparent);
-      padding: 0.2rem 0.5rem;
-      border-radius: 999px;
-    }
-    .login-card {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .login-card__header h1 {
-      font-size: 1.75rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 0.375rem;
-    }
-    .login-card__header p {
-      font-size: 0.9rem;
-      color: color-mix(in srgb, var(--ink) 55%, transparent);
-      line-height: 1.5;
-    }
-    .login-card__footer {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-    }
-    .login-card__sep {
-      color: color-mix(in srgb, var(--ink) 25%, transparent);
-    }
-    .login-proofs {
-      display: flex;
-      gap: 1.25rem;
-      flex-wrap: wrap;
-      max-width: 400px;
-      width: 100%;
-    }
-    .login-proofs span {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, var(--ink) 30%, transparent);
-    }
-    /* Aside */
-    .login-aside {
-      min-width: 0;
-      background: color-mix(in srgb, var(--brand) 6%, var(--paper));
-      border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 3rem 2rem;
-      overflow: hidden;
-    }
-    .login-aside__inner {
-      max-width: 360px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-    .login-aside__label .eyebrow {
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-    .login-aside__label p {
-      font-size: 1rem;
-      line-height: 1.6;
-      color: color-mix(in srgb, var(--ink) 65%, transparent);
-    }
-    .login-mockup {
-      border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-      border-radius: 0.75rem;
-      overflow: hidden;
-      background: var(--paper);
-      box-shadow: 0 4px 24px color-mix(in srgb, var(--ink) 6%, transparent);
-    }
-    .login-mockup__bar {
-      display: flex;
-      gap: 0.375rem;
-      align-items: center;
-      padding: 0.625rem 0.875rem;
-      border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-      background: color-mix(in srgb, var(--ink) 3%, transparent);
-    }
-    .login-mockup__bar span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--ink) 18%, transparent);
-    }
-    .login-mockup__content {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.875rem;
-    }
-    .login-mockup__stat {
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-    }
-    .login-mockup__stat strong {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--brand);
-    }
-    .login-mockup__stat span {
-      font-size: 0.75rem;
-      color: color-mix(in srgb, var(--ink) 50%, transparent);
-    }
-    .login-mockup__divider {
-      height: 1px;
-      background: color-mix(in srgb, var(--ink) 8%, transparent);
-      margin: 0.25rem 0;
-    }
-    .login-mockup__row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      color: color-mix(in srgb, var(--ink) 65%, transparent);
-    }
-    .login-mockup__dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .login-mockup__dot--green { background: #22c55e; }
-    .login-mockup__dot--amber { background: #f59e0b; }
-    /* Responsive */
-    @media (max-width: 960px) {
-      .login-shell {
-        grid-template-columns: 1fr;
-      }
-      .login-aside {
-        display: none;
-      }
-      .login-panel {
-        padding: 3rem 2rem;
-        align-items: center;
-      }
-    }
-  `],
-})
+  `})
 export class LoginPageComponent implements OnInit {
   email = "";
   password = "";

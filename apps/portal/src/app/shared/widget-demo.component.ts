@@ -7,11 +7,6 @@ type WidgetConfigWindow = Window & typeof globalThis & {
     apiBase: string;
     widgetBaseUrl: string;
   };
-  ChatPortalWidgetConfig?: {
-    siteKey: string;
-    apiBase: string;
-    widgetBaseUrl: string;
-  };
 };
 
 @Component({
@@ -47,7 +42,6 @@ export class WidgetDemoComponent implements OnChanges {
         apiBase: this.apiBase,
         widgetBaseUrl: this.ensureTrailingSlash(this.widgetBaseUrl),
       };
-      win.ChatPortalWidgetConfig = win.TalkarisWidgetConfig;
     }
 
     const existing = this.document.getElementById(this.scriptId);

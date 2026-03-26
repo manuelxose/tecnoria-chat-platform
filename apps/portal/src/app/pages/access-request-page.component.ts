@@ -77,49 +77,49 @@ import { MarketingFrameComponent } from "../shared/marketing-frame.component";
               <p>{{ copy.formSummary }}</p>
             </div>
 
-            <div class="alert alert-success" *ngIf="successMessage">{{ successMessage }}</div>
-            <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+            <div class="ck-alert ck-alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+            <div class="ck-alert ck-alert--danger" *ngIf="errorMessage">{{ errorMessage }}</div>
 
-            <form class="stack-form" (ngSubmit)="submit()">
+            <form class="ck-form-stack" (ngSubmit)="submit()">
               <div class="form-grid">
-                <label>
-                  <span>{{ copy.nameLabel }}</span>
-                  <input [(ngModel)]="form.name" name="name" required autocomplete="name" />
-                </label>
+                <div class="ck-field">
+                  <label class="ck-label" for="access-name">{{ copy.nameLabel }}</label>
+                  <input id="access-name" class="ck-input" [(ngModel)]="form.name" name="name" required autocomplete="name" />
+                </div>
 
-                <label>
-                  <span>{{ copy.companyLabel }}</span>
-                  <input [(ngModel)]="form.company" name="company" required autocomplete="organization" />
-                </label>
+                <div class="ck-field">
+                  <label class="ck-label" for="access-company">{{ copy.companyLabel }}</label>
+                  <input id="access-company" class="ck-input" [(ngModel)]="form.company" name="company" required autocomplete="organization" />
+                </div>
               </div>
 
               <div class="form-grid">
-                <label>
-                  <span>{{ copy.emailLabel }}</span>
-                  <input [(ngModel)]="form.email" name="email" type="email" required autocomplete="email" />
-                </label>
+                <div class="ck-field">
+                  <label class="ck-label" for="access-email">{{ copy.emailLabel }}</label>
+                  <input id="access-email" class="ck-input" [(ngModel)]="form.email" name="email" type="email" required autocomplete="email" />
+                </div>
 
-                <label>
-                  <span>{{ copy.phoneLabel }}</span>
-                  <input [(ngModel)]="form.phone" name="phone" autocomplete="tel" />
-                </label>
+                <div class="ck-field">
+                  <label class="ck-label" for="access-phone">{{ copy.phoneLabel }}</label>
+                  <input id="access-phone" class="ck-input" [(ngModel)]="form.phone" name="phone" autocomplete="tel" />
+                </div>
               </div>
 
-              <label>
-                <span>{{ copy.tenantLabel }}</span>
-                <input [(ngModel)]="form.requestedTenantName" name="requestedTenantName" />
-              </label>
+              <div class="ck-field">
+                <label class="ck-label" for="access-tenant">{{ copy.tenantLabel }}</label>
+                <input id="access-tenant" class="ck-input" [(ngModel)]="form.requestedTenantName" name="requestedTenantName" />
+              </div>
 
-              <label>
-                <span>{{ copy.contextLabel }}</span>
-                <textarea [(ngModel)]="form.message" name="message" rows="6"></textarea>
-              </label>
+              <div class="ck-field">
+                <label class="ck-label" for="access-context">{{ copy.contextLabel }}</label>
+                <textarea id="access-context" class="ck-textarea" [(ngModel)]="form.message" name="message" rows="6"></textarea>
+              </div>
 
               <div class="form-shell__footnote">
                 <span>{{ copy.note }}</span>
               </div>
 
-              <button class="button button-primary button-primary--block" type="submit" [disabled]="submitting">
+              <button class="ck-btn ck-btn--primary ck-btn--fill" type="submit" [disabled]="submitting">
                 {{ submitting ? copy.submitting : copy.submit }}
               </button>
             </form>

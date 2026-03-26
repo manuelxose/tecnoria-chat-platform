@@ -10,17 +10,6 @@ import { Project } from "../../core/models";
   standalone: true,
   imports: [RouterModule, FormsModule],
   template: `
-    <div class="ck-topbar">
-      <div class="ck-topbar__breadcrumb">
-        <span>Bots</span>
-        <span>›</span>
-        <strong>All Bots</strong>
-      </div>
-      <div class="ck-topbar__actions">
-        <a class="ck-btn ck-btn--primary ck-btn--sm" routerLink="/app/bots/new">+ New Bot</a>
-      </div>
-    </div>
-
     <div class="ck-content">
       <div class="ck-page-header">
         <div>
@@ -43,7 +32,7 @@ import { Project } from "../../core/models";
             [(ngModel)]="searchQuery"
           />
         </div>
-        <select class="ck-select" style="width: auto; min-width: 120px;" [(ngModel)]="filterStatus">
+        <select class="ck-select ck-auto-035" [(ngModel)]="filterStatus">
           <option value="">All status</option>
           <option value="active">Active</option>
           <option value="draft">Draft</option>
@@ -54,9 +43,9 @@ import { Project } from "../../core/models";
       <!-- Bots table -->
       @if (loading) {
         <div class="ck-card">
-          <div class="ck-skeleton" style="height: 40px; margin-bottom: 10px;"></div>
-          <div class="ck-skeleton" style="height: 40px; margin-bottom: 10px;"></div>
-          <div class="ck-skeleton" style="height: 40px;"></div>
+          <div class="ck-skeleton ck-auto-099"></div>
+          <div class="ck-skeleton ck-auto-099"></div>
+          <div class="ck-skeleton ck-auto-100"></div>
         </div>
       } @else if (filtered.length > 0) {
         <div class="ck-table-wrap">
@@ -76,7 +65,7 @@ import { Project } from "../../core/models";
                 <tr>
                   <td>
                     <div class="ck-table__cell--strong">{{ bot.botName }}</div>
-                    <div style="font-size: 0.78rem; color: var(--ck-text-muted);">{{ bot.name }}</div>
+                    <div class="ck-auto-077">{{ bot.name }}</div>
                   </td>
                   <td class="ck-table__cell--mono">{{ bot.projectKey }}</td>
                   <td>
@@ -85,12 +74,12 @@ import { Project } from "../../core/models";
                       {{ bot.status ?? 'active' }}
                     </span>
                   </td>
-                  <td style="color: var(--ck-text-muted); font-size: 0.82rem;">{{ bot.language }}</td>
-                  <td style="color: var(--ck-text-muted); font-size: 0.78rem;">
+                  <td class="ck-auto-101">{{ bot.language }}</td>
+                  <td class="ck-auto-010">
                     {{ bot.allowedDomains.slice(0, 2).join(', ') }}{{ bot.allowedDomains.length > 2 ? '...' : '' }}
                   </td>
                   <td>
-                    <div style="display: flex; gap: 6px;">
+                    <div class="ck-auto-102">
                       <a class="ck-btn ck-btn--ghost ck-btn--sm" [routerLink]="['/app/bots', bot.projectKey]">
                         Edit
                       </a>

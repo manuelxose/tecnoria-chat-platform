@@ -28,12 +28,12 @@ import { WorkspaceMember } from "../../core/models";
       </div>
 
       @if (inviteOpen) {
-        <div class="ck-card" style="margin-bottom: 20px; border-color: var(--ck-accent-soft);">
+        <div class="ck-card ck-auto-175">
           <div class="ck-card__header">
             <p class="ck-card__title">Invite Member</p>
             <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="inviteOpen = false">✕</button>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+          <div class="ck-auto-180">
             <input class="ck-input" type="email" placeholder="email@example.com" [(ngModel)]="inviteEmail" />
             <select class="ck-select" [(ngModel)]="inviteRole">
               <option value="editor">Editor</option>
@@ -45,7 +45,7 @@ import { WorkspaceMember } from "../../core/models";
             </button>
           </div>
           @if (inviteMsg) {
-            <p style="margin-top: 8px; font-size: 0.82rem; color: var(--ck-accent-strong);">{{ inviteMsg }}</p>
+            <p class="ck-auto-181">{{ inviteMsg }}</p>
           }
         </div>
       }
@@ -65,28 +65,28 @@ import { WorkspaceMember } from "../../core/models";
             @for (m of members; track m.userId) {
               <tr>
                 <td>
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 0.84rem; color: var(--ck-text);">{{ m.displayName ?? m.email }}</span>
+                  <div class="ck-auto-182">
+                    <span class="ck-auto-183">{{ m.displayName ?? m.email }}</span>
                     @if (m.displayName) {
-                      <span style="font-size: 0.78rem; color: var(--ck-text-muted);">{{ m.email }}</span>
+                      <span class="ck-auto-077">{{ m.email }}</span>
                     }
                   </div>
                 </td>
                 <td>
-                  <select class="ck-select" style="width: auto;" [(ngModel)]="m.role" (ngModelChange)="updateRole(m)">
+                  <select class="ck-select ck-auto-184" [(ngModel)]="m.role" (ngModelChange)="updateRole(m)">
                     <option value="admin">admin</option>
                     <option value="editor">editor</option>
                     <option value="viewer">viewer</option>
                   </select>
                 </td>
                 <td><span class="ck-badge" [class]="statusBadge(m.status)">{{ m.status }}</span></td>
-                <td style="font-size: 0.8rem; color: var(--ck-text-muted);">{{ m.joinedAt | slice:0:10 }}</td>
+                <td class="ck-auto-171">{{ m.joinedAt | slice:0:10 }}</td>
                 <td>
-                  <button class="ck-btn ck-btn--ghost ck-btn--sm" style="color: var(--ck-red);" (click)="remove(m)">Remove</button>
+                  <button class="ck-btn ck-btn--ghost ck-btn--sm ck-auto-106" (click)="remove(m)">Remove</button>
                 </td>
               </tr>
             } @empty {
-              <tr><td colspan="5" style="text-align: center; color: var(--ck-text-muted);">No members yet</td></tr>
+              <tr><td colspan="5" class="ck-auto-137">No members yet</td></tr>
             }
           </tbody>
         </table>

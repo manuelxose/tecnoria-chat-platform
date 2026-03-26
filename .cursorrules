@@ -1,0 +1,27 @@
+{
+  "project": "talkaris",
+  "description": "Conversational AI platform for websites and products.",
+  "roles": {
+    "Architect": {
+      "focus": "Clean Architecture, SOLID, multi-tenant scaling, orchestrator logic.",
+      "instructions": "When acting as Architect, lead the rebuild. Coordinate swarms and enforce dependency inversion. Ensure every module is tenant-aware."
+    },
+    "Developer": {
+      "focus": "Conversational AI implementation, worker logic, API services.",
+      "instructions": "When acting as Developer, implement features in 'chat-api' and 'ingest-worker'. Follow the Clean Architecture patterns established by the Architect."
+    },
+    "Tester": {
+      "focus": "E2E testing, QA, security hardening.",
+      "instructions": "When acting as Tester, focus on reliable coverage for the conversational engine and multi-tenant boundaries. Use TDD London School."
+    },
+    "UXUI": {
+      "focus": "Portal & Widget aesthetics, shared UI library.",
+      "instructions": "When acting as UX/UI, rebuild 'portal' and 'widget' with a shared UI package. Focus on premium design and intuitive conversational flows."
+    }
+  },
+  "token_optimization": {
+    "be_concise": true,
+    "prefer_summaries": true,
+    "exclude_paths": ["node_modules", ".git", ".claude", ".swarm", ".ruflo"]
+  }
+}

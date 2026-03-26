@@ -232,27 +232,37 @@ import { TestimonialStripComponent } from "../shared/testimonial-strip.component
               <p>{{ locale === "es" ? "Sin permanencia. Sin compromiso. Si hay fit, estás en producción en 48h." : "No lock-in. No commitment. If there is fit, you are live in 48h." }}</p>
             </div>
             <div class="inline-demo-panel__form">
-              <div class="alert alert-success" *ngIf="inlineDemoSuccess">
+              <div class="ck-alert ck-alert--success" *ngIf="inlineDemoSuccess">
                 {{ locale === "es" ? "¡Solicitud enviada! Te contactaremos pronto." : "Request sent! We will be in touch soon." }}
               </div>
-              <div class="alert alert-error" *ngIf="inlineDemoError">
+              <div class="ck-alert ck-alert--danger" *ngIf="inlineDemoError">
                 {{ locale === "es" ? "Error al enviar. Inténtalo de nuevo." : "Error sending. Please try again." }}
               </div>
-              <form class="inline-demo-form" (ngSubmit)="submitInlineDemo()" *ngIf="!inlineDemoSuccess">
-                <input
-                  [(ngModel)]="inlineDemoForm.email"
-                  name="inline-email"
-                  type="email"
-                  required
-                  [placeholder]="locale === 'es' ? 'Email corporativo' : 'Work email'"
-                />
-                <input
-                  [(ngModel)]="inlineDemoForm.company"
-                  name="inline-company"
-                  required
-                  [placeholder]="locale === 'es' ? 'Empresa' : 'Company'"
-                />
-                <button class="button button-primary" type="submit" [disabled]="inlineDemoSubmitting">
+              <form class="inline-demo-form ck-form-stack" (ngSubmit)="submitInlineDemo()" *ngIf="!inlineDemoSuccess">
+                <div class="ck-field">
+                  <label class="ck-label" for="inline-demo-email">{{ locale === "es" ? "Email corporativo" : "Work email" }}</label>
+                  <input
+                    id="inline-demo-email"
+                    class="ck-input"
+                    [(ngModel)]="inlineDemoForm.email"
+                    name="inline-email"
+                    type="email"
+                    required
+                    [placeholder]="locale === 'es' ? 'tu@empresa.com' : 'you@company.com'"
+                  />
+                </div>
+                <div class="ck-field">
+                  <label class="ck-label" for="inline-demo-company">{{ locale === "es" ? "Empresa" : "Company" }}</label>
+                  <input
+                    id="inline-demo-company"
+                    class="ck-input"
+                    [(ngModel)]="inlineDemoForm.company"
+                    name="inline-company"
+                    required
+                    [placeholder]="locale === 'es' ? 'Nombre de empresa' : 'Company name'"
+                  />
+                </div>
+                <button class="ck-btn ck-btn--primary ck-btn--fill" type="submit" [disabled]="inlineDemoSubmitting">
                   {{ inlineDemoSubmitting ? (locale === "es" ? "Enviando..." : "Sending...") : (locale === "es" ? "Solicitar demo rápida" : "Request quick demo") }}
                 </button>
               </form>
@@ -324,177 +334,7 @@ import { TestimonialStripComponent } from "../shared/testimonial-strip.component
         </div>
       </section>
     </app-marketing-frame>
-  `,
-  styles: [`
-    .hero-visual--chat {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .chat-mockup {
-      width: 320px;
-      max-width: 100%;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(8, 20, 36, 0.25);
-      background: #fff;
-      font-size: 0.875rem;
-    }
-    .chat-mockup__bar {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.75rem 1rem;
-      background: var(--surface-dark, #081424);
-      color: #fff;
-    }
-    .chat-mockup__dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-    }
-    .chat-mockup__title {
-      font-weight: 700;
-      font-size: 0.8rem;
-      margin-left: 0.25rem;
-      flex: 1;
-    }
-    .chat-mockup__body {
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      min-height: 200px;
-    }
-    .chat-msg {
-      display: flex;
-      opacity: 0;
-      animation: fadeSlideIn 0.4s ease forwards;
-    }
-    .chat-msg--bot { justify-content: flex-start; }
-    .chat-msg--user { justify-content: flex-end; }
-    .chat-msg--1 { animation-delay: 0.3s; }
-    .chat-msg--2 { animation-delay: 1.1s; }
-    .chat-msg--3 { animation-delay: 2.0s; }
-    .chat-msg--4 { animation-delay: 3.1s; }
-    .chat-msg__bubble {
-      max-width: 80%;
-      padding: 0.6rem 0.9rem;
-      border-radius: 12px;
-      line-height: 1.4;
-    }
-    .chat-msg--bot .chat-msg__bubble {
-      background: color-mix(in srgb, var(--brand) 12%, transparent);
-      color: var(--ink);
-      border-bottom-left-radius: 4px;
-    }
-    .chat-msg--user .chat-msg__bubble {
-      background: var(--brand);
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-    .chat-mockup__footer {
-      padding: 0.5rem 1rem;
-      text-align: center;
-      background: color-mix(in srgb, var(--brand) 6%, transparent);
-    }
-    .chat-mockup__powered {
-      font-size: 0.7rem;
-      opacity: 0.6;
-      font-weight: 600;
-    }
-    @keyframes fadeSlideIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .testimonials-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-    .testimonial-card {
-      background: var(--surface-dark, #081424);
-      color: #fff;
-      border-radius: 12px;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .testimonial-card__quote {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      font-style: italic;
-    }
-    .testimonial-card__author {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      font-size: 0.875rem;
-    }
-    .testimonial-card__author strong { font-weight: 700; }
-    .testimonial-card__company { opacity: 0.65; }
-    .logos-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      justify-content: center;
-      align-items: center;
-      margin-top: 2rem;
-    }
-    .logo-item {
-      font-size: 1.1rem;
-      font-weight: 700;
-      opacity: 0.4;
-      transition: opacity 0.2s;
-      cursor: default;
-    }
-    .logo-item:hover { opacity: 0.8; }
-    .numbered-grid {
-      display: grid;
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-    .numbered-card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .numbered-card__num {
-      font-size: 3rem;
-      font-weight: 900;
-      color: var(--brand);
-      line-height: 1;
-    }
-    .inline-demo-section {
-      background: color-mix(in srgb, var(--brand) 6%, var(--bg));
-      padding: 4rem 0;
-    }
-    .inline-demo-panel {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3rem;
-      align-items: center;
-    }
-    @media (max-width: 720px) {
-      .inline-demo-panel { grid-template-columns: 1fr; }
-    }
-    .inline-demo-form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .inline-demo-form input {
-      padding: 0.75rem 1rem;
-      border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: #fff;
-    }
-  `],
-})
+  `})
 export class PublicPageComponent implements OnInit {
   locale: PublicLocale = "es";
   page!: PublicPageDefinition;

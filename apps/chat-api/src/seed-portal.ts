@@ -72,7 +72,7 @@ async function main(): Promise<void> {
            portal_base_url = $8,
            api_base_url = $9,
            widget_base_url = $10,
-           developed_by = 'Tecnoria',
+           developed_by = 'Talkaris',
            demo_project_key = $11,
            demo_site_key = $12,
            default_locale = 'es',

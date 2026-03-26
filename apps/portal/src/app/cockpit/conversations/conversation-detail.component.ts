@@ -12,7 +12,7 @@ import { HandoverEvent, MessageItem } from "../../core/models";
   template: `
     <div class="ck-topbar">
       <div class="ck-topbar__breadcrumb">
-        <a routerLink="/app/conversations" style="color: var(--ck-text-muted); text-decoration: none;">Conversations</a>
+        <a routerLink="/app/conversations" class="ck-auto-008">Conversations</a>
         <span>›</span>
         <strong>{{ conversationId.slice(0, 8) }}…</strong>
       </div>
@@ -22,7 +22,7 @@ import { HandoverEvent, MessageItem } from "../../core/models";
       <div class="ck-page-header">
         <div>
           <h1 class="ck-page-header__title">Conversation</h1>
-          <p class="ck-page-header__sub" style="font-family: ui-monospace; font-size: 0.8rem;">{{ conversationId }}</p>
+          <p class="ck-page-header__sub ck-auto-115">{{ conversationId }}</p>
         </div>
         <a class="ck-btn ck-btn--secondary ck-btn--sm" routerLink="/app/conversations">← Back</a>
       </div>
@@ -30,48 +30,105 @@ import { HandoverEvent, MessageItem } from "../../core/models";
       @if (loading) {
         <div class="ck-card">
           @for (i of [1,2,3]; track i) {
-            <div class="ck-skeleton" style="height: 80px; margin-bottom: 12px;"></div>
+            <div class="ck-skeleton ck-auto-116"></div>
           }
         </div>
       } @else if (messages.length > 0) {
-        <div style="display: grid; gap: 10px; max-width: 720px;">
-          @for (msg of messages; track msg.id) {
-            <div class="ck-card ck-card--compact" [style]="msgStyle(msg.role)">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="ck-grid-sidebar conversation-layout">
+          <div class="ck-card ck-card--compact conversation-thread">
+            @for (msg of messages; track msg.id) {
+              <div [class]="msg.role === 'user' ? 'ck-chat-msg--user' : 'ck-chat-msg--bot'">
+                <div [class]="msg.role === 'user' ? 'ck-chat-bubble--user chat-bubble' : 'ck-chat-bubble--bot chat-bubble'">
+                  {{ msg.body }}
+                </div>
+                <div class="ck-chat-meta">
                   <span class="ck-badge" [class]="roleBadge(msg.role)">{{ msg.role }}</span>
+                  <span class="ck-text-xs ck-text-muted">{{ msg.createdAt | date: 'HH:mm:ss' }}</span>
                   @if (msg.confidence !== null && msg.confidence !== undefined && msg.role === 'assistant') {
-                    <span style="font-size: 0.72rem; color: var(--ck-text-muted);">
-                      Confidence: {{ (msg.confidence * 100).toFixed(0) }}%
-                    </span>
+                    <span class="ck-text-xs ck-text-muted">Confidence {{ (msg.confidence * 100).toFixed(0) }}%</span>
                   }
                 </div>
-                <span style="font-size: 0.72rem; color: var(--ck-text-muted);">
-                  {{ msg.createdAt | date: 'HH:mm:ss' }}
-                </span>
-              </div>
-              <p style="margin: 0; font-size: 0.88rem; white-space: pre-wrap; line-height: 1.6; color: var(--ck-text);">{{ msg.body }}</p>
-              @if (msg.citations && msg.citations.length > 0) {
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ck-border);">
-                  <p style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ck-text-muted); margin: 0 0 6px;">
-                    Citations
-                  </p>
-                  <div style="display: grid; gap: 4px;">
+                @if (msg.citations && msg.citations.length > 0) {
+                  <div class="ck-chat-citations">
                     @for (cite of msg.citations; track cite.url) {
                       <a
                         [href]="cite.url"
                         target="_blank"
                         rel="noopener"
-                        style="font-size: 0.8rem; color: var(--ck-accent-strong); text-decoration: none;"
+                        class="ck-link-subtle"
                       >
                         {{ cite.title }}
                       </a>
                     }
                   </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ck-stack-lg conversation-sidebar">
+            <div class="ck-card ck-card--compact">
+              <div class="ck-card__header">
+                <p class="ck-card__title">Transcript Summary</p>
+              </div>
+              <div class="ck-kv-list">
+                <div class="ck-kv-row">
+                  <span class="ck-kv-row__key">Messages</span>
+                  <span class="ck-kv-row__value">{{ messages.length }}</span>
                 </div>
+                <div class="ck-kv-row">
+                  <span class="ck-kv-row__key">Started</span>
+                  <span class="ck-kv-row__value">{{ messages[0].createdAt | date: 'MMM d, HH:mm' }}</span>
+                </div>
+                <div class="ck-kv-row">
+                  <span class="ck-kv-row__key">Last activity</span>
+                  <span class="ck-kv-row__value">{{ messages[messages.length - 1].createdAt | date: 'MMM d, HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ck-card ck-card--compact ck-auto-125">
+              <div class="ck-card__header">
+                <p class="ck-card__title">Satisfaction Rating</p>
+              </div>
+              @if (rating) {
+                <div class="ck-auto-074">
+                  <div
+                    class="ck-auto-126"
+                    [class.ck-score--success]="rating.score >= 4"
+                    [class.ck-score--warning]="rating.score === 3"
+                    [class.ck-score--danger]="rating.score <= 2"
+                  >
+                    {{ '★'.repeat(rating.score) }}{{ '☆'.repeat(5 - rating.score) }}
+                  </div>
+                  <div>
+                    <p class="ck-auto-127">{{ rating.score }}/5</p>
+                    @if (rating.comment) {
+                      <p class="ck-auto-128">"{{ rating.comment }}"</p>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="ck-auto-129">No rating submitted for this conversation.</p>
               }
             </div>
-          }
+
+            @if (handover) {
+              <div class="ck-card ck-card--compact ck-auto-125">
+                <div class="ck-card__header">
+                  <p class="ck-card__title">Human Handover</p>
+                  <span class="ck-badge" [class]="handoverBadge(handover.status)">{{ handover.status }}</span>
+                </div>
+                @if (handover.reason) {
+                  <p class="ck-auto-130">Reason: {{ handover.reason }}</p>
+                }
+                <div class="ck-auto-131">
+                  <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="updateHandover('assigned')" [disabled]="handover.status === 'assigned'">Mark Assigned</button>
+                  <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="updateHandover('closed')" [disabled]="handover.status === 'closed'">Close</button>
+                </div>
+              </div>
+            }
+          </div>
         </div>
       } @else {
         <div class="ck-card">
@@ -83,46 +140,6 @@ import { HandoverEvent, MessageItem } from "../../core/models";
         </div>
       }
 
-      <!-- CSAT Rating -->
-      @if (!loading) {
-        <div class="ck-card" style="max-width: 720px; margin-top: 16px;">
-          <div class="ck-card__header">
-            <p class="ck-card__title">Satisfaction Rating</p>
-          </div>
-          @if (rating) {
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="font-size: 2rem; line-height: 1;" [style.color]="ratingColor(rating.score)">
-                {{ '★'.repeat(rating.score) }}{{ '☆'.repeat(5 - rating.score) }}
-              </div>
-              <div>
-                <p style="font-size: 0.9rem; font-weight: 600; color: var(--ck-text);">{{ rating.score }}/5</p>
-                @if (rating.comment) {
-                  <p style="font-size: 0.82rem; color: var(--ck-text-soft); margin: 2px 0 0;">"{{ rating.comment }}"</p>
-                }
-              </div>
-            </div>
-          } @else {
-            <p style="font-size: 0.84rem; color: var(--ck-text-muted);">No rating submitted for this conversation.</p>
-          }
-        </div>
-      }
-
-      <!-- Handover Status -->
-      @if (!loading && handover) {
-        <div class="ck-card" style="max-width: 720px; margin-top: 16px;">
-          <div class="ck-card__header">
-            <p class="ck-card__title">Human Handover</p>
-            <span class="ck-badge" [class]="handoverBadge(handover.status)">{{ handover.status }}</span>
-          </div>
-          @if (handover.reason) {
-            <p style="font-size: 0.84rem; color: var(--ck-text-soft); margin-bottom: 12px;">Reason: {{ handover.reason }}</p>
-          }
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="ck-btn ck-btn--secondary ck-btn--sm" (click)="updateHandover('assigned')" [disabled]="handover.status === 'assigned'">Mark Assigned</button>
-            <button class="ck-btn ck-btn--ghost ck-btn--sm" (click)="updateHandover('closed')" [disabled]="handover.status === 'closed'">Close</button>
-          </div>
-        </div>
-      }
     </div>
   `,
 })
@@ -168,24 +185,12 @@ export class ConversationDetailComponent implements OnInit {
     this.handover = await this.api.updateHandover(tenantId, this.conversationId, status);
   }
 
-  msgStyle(role: string): string {
-    if (role === "user") return "border-left: 3px solid var(--ck-accent);";
-    if (role === "assistant") return "border-left: 3px solid var(--ck-success);";
-    return "border-left: 3px solid var(--ck-border-strong);";
-  }
-
   roleBadge(role: string): string {
     switch (role) {
       case "user": return "ck-badge ck-badge--accent";
       case "assistant": return "ck-badge ck-badge--success";
       default: return "ck-badge ck-badge--default";
     }
-  }
-
-  ratingColor(score: number): string {
-    if (score >= 4) return "var(--ck-green, #3fb950)";
-    if (score >= 3) return "var(--ck-gold, #c29a52)";
-    return "var(--ck-red, #f85149)";
   }
 
   handoverBadge(status: string): string {
